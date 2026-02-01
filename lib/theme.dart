@@ -93,7 +93,7 @@ final ThemeData appTheme = ThemeData(
     margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
   ),
 
-  // Text Theme
+  // Text Theme  ),
   textTheme: const TextTheme(
     headlineMedium: TextStyle(
       fontFamily: 'Cairo',
@@ -113,5 +113,57 @@ final ThemeData appTheme = ThemeData(
       fontFamily: 'Cairo',
       color: Colors.black54,
     ),
+  ),
+);
+
+final ThemeData darkAppTheme = ThemeData(
+  useMaterial3: true,
+  fontFamily: 'Cairo',
+  brightness: Brightness.dark,
+  primaryColor: primaryColor,
+  colorScheme: ColorScheme.dark(
+    primary: primaryColor,
+    secondary: secondaryColor,
+    surface: const Color(0xFF1E1E1E),
+    error: errorColor,
+    onPrimary: Colors.white,
+    onSecondary: Colors.white,
+  ),
+  scaffoldBackgroundColor: const Color(0xFF121212),
+  appBarTheme: const AppBarTheme(
+    backgroundColor: Color(0xFF1E1E1E),
+    foregroundColor: Colors.white,
+    elevation: 0,
+    centerTitle: true,
+    titleTextStyle: TextStyle(
+      fontFamily: 'Cairo',
+      fontSize: 20,
+      fontWeight: FontWeight.bold,
+      color: Colors.white,
+    ),
+  ),
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: primaryColor,
+      foregroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      textStyle: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+    ),
+  ),
+  inputDecorationTheme: InputDecorationTheme(
+    filled: true,
+    fillColor: const Color(0xFF2C2C2C),
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Colors.white24)),
+    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: primaryColor, width: 2)),
+    labelStyle: const TextStyle(color: Colors.white70, fontFamily: 'Cairo'),
+    hintStyle: const TextStyle(color: Colors.white38, fontFamily: 'Cairo'),
+  ),
+  cardTheme: CardThemeData(
+    color: const Color(0xFF1E1E1E),
+    elevation: 2,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
   ),
 );

@@ -31,4 +31,8 @@ class UserService {
             .map((doc) => UserModel.fromMap(doc.data(), doc.id))
             .toList());
   }
+
+  Future<void> deleteUser(String userId) async {
+    await _firestore.collection('users').doc(userId).delete();
+  }
 }

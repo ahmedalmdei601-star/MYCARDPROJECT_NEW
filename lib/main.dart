@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'providers/user_state.dart';
 import 'providers/card_state.dart';
+import 'providers/settings_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/admin/admin_dashboard.dart';
 import 'screens/client/client_dashboard.dart';
@@ -31,6 +32,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => UserState()),
         ChangeNotifierProvider(create: (_) => CardState()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
       ],
       child: const MyApp(),
     ),
@@ -42,10 +44,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settings = Provider.of<SettingsProvider>(context);
     return MaterialApp(
       title: 'تطبيق إدارة الكروت',
       debugShowCheckedModeBanner: false,
       theme: appTheme,
+      darkTheme: darkAppTheme,
+      themeMode: settings.themeMode,
+      locale: settings.locale,
       home: const RootScreen(),
       builder: _errorWidgetBuilder,
     );

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_state.dart';
+import '../../providers/settings_provider.dart';
+import '../../services/auth_service.dart';
 import '../../theme.dart';
 import 'add_cards_screen.dart';
 import 'distribute_screen.dart';
 import 'reports_screen.dart';
+import 'manage_groceries_screen.dart';
 import '../register_screen.dart';
 import '../login_screen.dart';
 
@@ -72,11 +75,11 @@ class AdminDashboard extends StatelessWidget {
                     children: [
                       _buildMenuCard(
                         context,
-                        title: "إضافة بقالة",
-                        subtitle: "إنشاء حساب Client",
+                        title: "إدارة البقالات",
+                        subtitle: "عرض وحذف وإضافة",
                         icon: Icons.storefront_outlined,
                         color: Colors.blue,
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ManageGroceriesScreen())),
                       ),
                       _buildMenuCard(
                         context,
@@ -135,10 +138,10 @@ class AdminDashboard extends StatelessWidget {
               children: [
                 _buildDrawerItem(
                   icon: Icons.storefront_outlined,
-                  title: "إضافة بقالة",
+                  title: "إدارة البقالات",
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ManageGroceriesScreen()));
                   },
                 ),
                 _buildDrawerItem(
@@ -294,23 +297,115 @@ class AdminDashboard extends StatelessWidget {
   void _showSettingsDialog(BuildContext context) {
     showDialog(
       context: context,
+      builder: (context) {
+        return Consumer<SettingsProvider>(
+          builder: (context, settings, _) {
+            return AlertDialog(
+              title: const Text('الإعدادات', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.language, color: primaryColor),
+                    title: const Text('لغة التطبيق', style: TextStyle(fontFamily: 'Cairo')),
+                    subtitle: Text(settings.locale.languageCode == 'ar' ? 'العربية' : 'English', style: const TextStyle(fontFamily: 'Cairo')),
+                    onTap: () {
+                      if (settings.locale.languageCode == 'ar') {
+                        settings.setLocale('en');
+                      } else {
+                        settings.setLocale('ar');
+                      }
+                    },
+                  ),
+                  const Divider(height: 1),
+                  SwitchListTile(
+                    secondary: Icon(settings.isDarkMode ? Icons.dark_mode : Icons.light_mode, color: primaryColor),
+                    title: const Text('الوضع الداكن', style: TextStyle(fontFamily: 'Cairo')),
+                    value: settings.isDarkMode,
+                    onChanged: (bool value) {
+                      settings.toggleTheme();
+                    },
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.lock_outline, color: primaryColor),
+                    title: const Text('تغيير كلمة المرور', style: TextStyle(fontFamily: 'Cairo')),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showChangePasswordDialog(context);
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("إغلاق", style: TextStyle(fontFamily: 'Cairo')),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext context) {
+    final TextEditingController passwordController = TextEditingController();
+    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
       builder: (context) => AlertDialog(
-        title: const Text('الإعدادات', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo')),
+        title: const Text('تغيير كلمة المرور', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.language, color: primaryColor),
-              title: const Text('لغة التطبيق', style: TextStyle(fontFamily: 'Cairo')),
-              subtitle: const Text('العربية', style: TextStyle(fontFamily: 'Cairo')),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage(context, 'سيتم دعم تغيير اللغة قريباً');
-              },
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: passwordController,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'كلمة المرور الجديدة',
+              hintText: 'أدخل 6 أحرف على الأقل',
             ),
-          ],
+            validator: (value) {
+              if (value == null || value.length < 6) {
+                return 'يجب أن تكون كلمة المرور 6 أحرف على الأقل';
+              }
+              return null;
+            },
+          ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("إلغاء", style: TextStyle(fontFamily: 'Cairo')),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (formKey.currentState!.validate()) {
+                try {
+                  await AuthService.changePassword(passwordController.text);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    _showMessage(context, 'تم تغيير كلمة المرور بنجاح. يرجى تسجيل الدخول مرة أخرى.');
+                    // التوجيه لشاشة تسجيل الدخول يتم تلقائياً لأن AuthService.changePassword يسجل الخروج
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    _showMessage(context, 'خطأ: ${e.toString()}');
+                  }
+                }
+              }
+            },
+            child: const Text("حفظ", style: TextStyle(fontFamily: 'Cairo')),
+          ),
+        ],
       ),
     );
   }
