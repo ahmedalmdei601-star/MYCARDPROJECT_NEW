@@ -13,27 +13,59 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final identifierController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final identifierController = TextEditingController(text: "777575817@gmail.com");
   final passwordController = TextEditingController();
+  
   bool loading = false;
   bool _isPasswordVisible = false;
+  bool _rememberMe = false;
+  double _passwordStrength = 0;
+  String _passwordStrengthText = '';
+  Color _passwordStrengthColor = Colors.transparent;
 
-  Future<void> login() async {
-    final l = AppLocalizations.of(context);
-    final errorMsg = l != null ? (l.locale.languageCode == 'ar' ? 'الرجاء إدخال اسم المستخدم وكلمة المرور' : 'Please enter username and password') : 'الرجاء إدخال اسم المستخدم وكلمة المرور';
+  @override
+  void initState() {
+    super.initState();
+    passwordController.addListener(_checkPasswordStrength);
+  }
 
-    if (identifierController.text.isEmpty || passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMsg),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
+  void _checkPasswordStrength() {
+    String password = passwordController.text;
+    double strength = 0;
+    if (password.isEmpty) {
+      strength = 0;
+    } else if (password.length < 6) {
+      strength = 0.2;
+    } else {
+      strength = 0.4;
+      if (password.contains(RegExp(r'[A-Z]'))) strength += 0.2;
+      if (password.contains(RegExp(r'[0-9]'))) strength += 0.2;
+      if (password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) strength += 0.2;
     }
 
+    setState(() {
+      _passwordStrength = strength;
+      if (strength <= 0.2) {
+        _passwordStrengthText = 'ضعيفة جداً';
+        _passwordStrengthColor = Colors.red;
+      } else if (strength <= 0.4) {
+        _passwordStrengthText = 'ضعيفة';
+        _passwordStrengthColor = Colors.orange;
+      } else if (strength <= 0.7) {
+        _passwordStrengthText = 'متوسطة';
+        _passwordStrengthColor = Colors.blue;
+      } else {
+        _passwordStrengthText = 'قوية جداً';
+        _passwordStrengthColor = Colors.green;
+      }
+    });
+  }
+
+  Future<void> login() async {
+    if (!_formKey.currentState!.validate()) return;
+
     setState(() => loading = true);
-    
     Provider.of<UserState>(context, listen: false).clearState();
 
     try {
@@ -45,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(e.toString().replaceAll('Exception: ', ''), style: const TextStyle(fontFamily: 'Cairo')),
             backgroundColor: errorColor,
             behavior: SnackBarBehavior.floating,
           ),
@@ -73,98 +105,216 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 30),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.wifi_tethering,
-                    size: 80,
-                    color: primaryColor,
-                  ),
-                ),
-                const SizedBox(height: 30),
-                Text(
-                  isAr ? 'مرحباً بك' : 'Welcome Back',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontFamily: 'Cairo'),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  isAr ? 'قم بتسجيل الدخول لإدارة شبكتك' : 'Sign in to manage your network',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontFamily: 'Cairo'),
-                ),
-                const SizedBox(height: 50),
-
-                // Identifier Input (Phone or Email)
-                TextField(
-                  controller: identifierController,
-                  keyboardType: TextInputType.emailAddress, // Changed to support @ and dots
-                  decoration: InputDecoration(
-                    labelText: isAr ? 'رقم الهاتف أو البريد' : 'Phone or Email',
-                    hintText: isAr ? 'أدخل بيانات الدخول الخاصة بك' : 'Enter your login details',
-                    prefixIcon: const Icon(Icons.person_outline, color: primaryColor),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Password Input
-                TextField(
-                  controller: passwordController,
-                  obscureText: !_isPasswordVisible,
-                  decoration: InputDecoration(
-                    labelText: isAr ? 'كلمة المرور' : 'Password',
-                    hintText: isAr ? 'أدخل كلمة المرور' : 'Enter your password',
-                    prefixIcon: const Icon(Icons.lock_outline, color: primaryColor),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                        color: Colors.grey,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Logo Section
+                  Hero(
+                    tag: 'logo',
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: primaryColor.withOpacity(0.1),
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                          )
+                        ],
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
+                      child: const Icon(
+                        Icons.wifi_tethering_rounded,
+                        size: 80,
+                        color: primaryColor,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 40),
+                  const SizedBox(height: 32),
+                  
+                  // Welcome Text
+                  Text(
+                    isAr ? 'مرحباً بك' : 'Welcome Back',
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Cairo',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    isAr ? 'قم بتسجيل الدخول لإدارة شبكتك' : 'Sign in to manage your network',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                      fontFamily: 'Cairo',
+                    ),
+                  ),
+                  const SizedBox(height: 48),
 
-                // Login Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: loading ? null : login,
-                    child: loading
-                        ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
+                  // Identifier Field
+                  TextFormField(
+                    controller: identifierController,
+                    keyboardType: TextInputType.emailAddress,
+                    textAlign: isAr ? TextAlign.right : TextAlign.left,
+                    decoration: InputDecoration(
+                      labelText: isAr ? 'رقم الهاتف أو البريد' : 'Phone or Email',
+                      prefixIcon: const Icon(Icons.person_outline_rounded, color: primaryColor),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return isAr ? 'يرجى إدخال البيانات' : 'Please enter your details';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Password Field
+                  TextFormField(
+                    controller: passwordController,
+                    obscureText: !_isPasswordVisible,
+                    textAlign: isAr ? TextAlign.right : TextAlign.left,
+                    decoration: InputDecoration(
+                      labelText: isAr ? 'كلمة المرور' : 'Password',
+                      prefixIcon: const Icon(Icons.lock_outline_rounded, color: primaryColor),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isPasswordVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return isAr ? 'يرجى إدخال كلمة المرور' : 'Please enter password';
+                      }
+                      return null;
+                    },
+                  ),
+                  
+                  // Password Strength Indicator
+                  if (passwordController.text.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: LinearProgressIndicator(
+                                value: _passwordStrength,
+                                backgroundColor: Colors.grey[200],
+                                color: _passwordStrengthColor,
+                                minHeight: 6,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
-                          )
-                        : Text(isAr ? 'تسجيل الدخول' : 'Login'),
+                            const SizedBox(width: 10),
+                            Text(
+                              _passwordStrengthText,
+                              style: TextStyle(
+                                color: _passwordStrengthColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Cairo',
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        if (_passwordStrength <= 0.4)
+                          Align(
+                            alignment: isAr ? Alignment.centerRight : Alignment.centerLeft,
+                            child: Text(
+                              isAr ? 'نصيحة: استخدم أرقاماً ورموزاً وأحرفاً كبيرة' : 'Tip: Use numbers, symbols, and caps',
+                              style: const TextStyle(fontSize: 10, color: Colors.grey, fontFamily: 'Cairo'),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+
+                  const SizedBox(height: 16),
+
+                  // Remember Me & Forgot Password
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _rememberMe,
+                            activeColor: primaryColor,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                            onChanged: (val) => setState(() => _rememberMe = val!),
+                          ),
+                          Text(
+                            isAr ? 'تذكرني' : 'Remember me',
+                            style: const TextStyle(fontFamily: 'Cairo', fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // TODO: Implement Forgot Password logic
+                        },
+                        child: Text(
+                          isAr ? 'نسيت كلمة المرور؟' : 'Forgot Password?',
+                          style: const TextStyle(color: primaryColor, fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 40),
-                
-                Text(
-                  isAr ? 'نظام إدارة الشبكات المحلية للبقالات' : 'Local Grocery Network Management System',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                    fontFamily: 'Cairo',
+                  const SizedBox(height: 32),
+
+                  // Login Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: loading ? null : login,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: loading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                              isAr ? 'تسجيل الدخول' : 'Login',
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                            ),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 40),
+                  
+                  // Footer
+                  Text(
+                    isAr ? 'نظام إدارة الشبكات المحلية للبقالات' : 'Local Grocery Network Management System',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.grey[500],
+                      fontSize: 12,
+                      fontFamily: 'Cairo',
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
