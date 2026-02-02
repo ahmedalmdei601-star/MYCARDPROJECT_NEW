@@ -3,11 +3,13 @@ import 'package:provider/provider.dart';
 import '../../providers/user_state.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/auth_service.dart';
+import '../../services/app_localizations.dart';
 import '../../theme.dart';
 import 'add_cards_screen.dart';
 import 'distribute_screen.dart';
 import 'reports_screen.dart';
 import 'manage_groceries_screen.dart';
+import 'settings_screen.dart';
 import '../register_screen.dart';
 import '../login_screen.dart';
 
@@ -16,10 +18,11 @@ class AdminDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("لوحة التحكم"),
+        title: Text(l.translate('admin_dashboard')),
       ),
       drawer: _buildDrawer(context),
       body: LayoutBuilder(
@@ -38,22 +41,22 @@ class AdminDashboard extends StatelessWidget {
                       bottomRight: Radius.circular(30),
                     ),
                   ),
-                  child: const Column(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "مرحباً المسؤول",
-                        style: TextStyle(
+                        l.translate('welcome_admin'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Cairo',
                         ),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Text(
-                        "إليك ملخص إدارة الشبكة اليوم",
-                        style: TextStyle(
+                        l.translate('network_summary'),
+                        style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 14,
                           fontFamily: 'Cairo',
@@ -71,36 +74,36 @@ class AdminDashboard extends StatelessWidget {
                     crossAxisCount: constraints.maxWidth > 600 ? 3 : 2,
                     crossAxisSpacing: 20,
                     mainAxisSpacing: 20,
-                    childAspectRatio: 0.85, // تحسين النسبة لتجنب الـ Overflow
+                    childAspectRatio: 0.85,
                     children: [
                       _buildMenuCard(
                         context,
-                        title: "إدارة البقالات",
-                        subtitle: "عرض وحذف وإضافة",
+                        title: l.translate('manage_groceries'),
+                        subtitle: l.translate('manage_groceries_sub'),
                         icon: Icons.storefront_outlined,
                         color: Colors.blue,
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ManageGroceriesScreen())),
                       ),
                       _buildMenuCard(
                         context,
-                        title: "إضافة كروت",
-                        subtitle: "إدخال كروت الشبكة",
+                        title: l.translate('add_cards'),
+                        subtitle: l.translate('add_cards_sub'),
                         icon: Icons.add_card_outlined,
                         color: Colors.orange,
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddCardsScreen())),
                       ),
                       _buildMenuCard(
                         context,
-                        title: "توزيع كروت",
-                        subtitle: "توزيع على البقالات",
+                        title: l.translate('distribute_cards'),
+                        subtitle: l.translate('distribute_cards_sub'),
                         icon: Icons.move_to_inbox_outlined,
                         color: Colors.teal,
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DistributeScreen())),
                       ),
                       _buildMenuCard(
                         context,
-                        title: "التقارير",
-                        subtitle: "المبيعات والاستخدام",
+                        title: l.translate('reports'),
+                        subtitle: l.translate('reports_sub'),
                         icon: Icons.analytics_outlined,
                         color: Colors.purple,
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen())),
@@ -117,6 +120,7 @@ class AdminDashboard extends StatelessWidget {
   }
 
   Widget _buildDrawer(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Drawer(
       child: Column(
         children: [
@@ -126,43 +130,47 @@ class AdminDashboard extends StatelessWidget {
               backgroundColor: Colors.white,
               child: Icon(Icons.admin_panel_settings, color: primaryColor, size: 40),
             ),
-            accountName: const Text(
-              "المسؤول",
-              style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+            accountName: Text(
+              l.translate('welcome_admin'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
             ),
-            accountEmail: const Text("إدارة الشبكة المحلية", style: TextStyle(fontFamily: 'Cairo')),
+            accountEmail: const Text("Admin Panel", style: TextStyle(fontFamily: 'Cairo')),
           ),
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
                 _buildDrawerItem(
+                  context,
                   icon: Icons.storefront_outlined,
-                  title: "إدارة البقالات",
+                  title: l.translate('manage_groceries'),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ManageGroceriesScreen()));
                   },
                 ),
                 _buildDrawerItem(
+                  context,
                   icon: Icons.add_card_outlined,
-                  title: "إضافة كرت",
+                  title: l.translate('add_cards'),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const AddCardsScreen()));
                   },
                 ),
                 _buildDrawerItem(
+                  context,
                   icon: Icons.move_to_inbox_outlined,
-                  title: "توزيع كروت",
+                  title: l.translate('distribute_cards'),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const DistributeScreen()));
                   },
                 ),
                 _buildDrawerItem(
+                  context,
                   icon: Icons.analytics_outlined,
-                  title: "التقارير",
+                  title: l.translate('reports'),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen()));
@@ -170,16 +178,18 @@ class AdminDashboard extends StatelessWidget {
                 ),
                 const Divider(),
                 _buildDrawerItem(
+                  context,
                   icon: Icons.settings_outlined,
-                  title: "الإعدادات",
+                  title: l.translate('settings'),
                   onTap: () {
                     Navigator.pop(context);
-                    _showSettingsDialog(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
                   },
                 ),
                 _buildDrawerItem(
+                  context,
                   icon: Icons.info_outline,
-                  title: "حولنا",
+                  title: l.translate('about_us'),
                   onTap: () {
                     Navigator.pop(context);
                     _showAboutDialog(context);
@@ -187,8 +197,9 @@ class AdminDashboard extends StatelessWidget {
                 ),
                 const Divider(),
                 _buildDrawerItem(
+                  context,
                   icon: Icons.logout_rounded,
-                  title: "تسجيل الخروج",
+                  title: l.translate('logout'),
                   color: Colors.red,
                   onTap: () async {
                     final userState = Provider.of<UserState>(context, listen: false);
@@ -209,7 +220,8 @@ class AdminDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildDrawerItem({
+  Widget _buildDrawerItem(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
@@ -221,7 +233,7 @@ class AdminDashboard extends StatelessWidget {
         title,
         style: TextStyle(
           fontFamily: 'Cairo',
-          color: color ?? Colors.black87,
+          color: color ?? Theme.of(context).textTheme.bodyLarge?.color,
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -265,10 +277,10 @@ class AdminDashboard extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   fontFamily: 'Cairo',
                 ),
                 textAlign: TextAlign.center,
@@ -278,9 +290,9 @@ class AdminDashboard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
-                  color: Colors.black45,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                   fontFamily: 'Cairo',
                 ),
                 textAlign: TextAlign.center,
@@ -290,122 +302,6 @@ class AdminDashboard extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _showSettingsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Consumer<SettingsProvider>(
-          builder: (context, settings, _) {
-            return AlertDialog(
-              title: const Text('الإعدادات', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.language, color: primaryColor),
-                    title: const Text('لغة التطبيق', style: TextStyle(fontFamily: 'Cairo')),
-                    subtitle: Text(settings.locale.languageCode == 'ar' ? 'العربية' : 'English', style: const TextStyle(fontFamily: 'Cairo')),
-                    onTap: () {
-                      if (settings.locale.languageCode == 'ar') {
-                        settings.setLocale('en');
-                      } else {
-                        settings.setLocale('ar');
-                      }
-                    },
-                  ),
-                  const Divider(height: 1),
-                  SwitchListTile(
-                    secondary: Icon(settings.isDarkMode ? Icons.dark_mode : Icons.light_mode, color: primaryColor),
-                    title: const Text('الوضع الداكن', style: TextStyle(fontFamily: 'Cairo')),
-                    value: settings.isDarkMode,
-                    onChanged: (bool value) {
-                      settings.toggleTheme();
-                    },
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.lock_outline, color: primaryColor),
-                    title: const Text('تغيير كلمة المرور', style: TextStyle(fontFamily: 'Cairo')),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _showChangePasswordDialog(context);
-                    },
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("إغلاق", style: TextStyle(fontFamily: 'Cairo')),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _showChangePasswordDialog(BuildContext context) {
-    final TextEditingController passwordController = TextEditingController();
-    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('تغيير كلمة المرور', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Form(
-          key: formKey,
-          child: TextFormField(
-            controller: passwordController,
-            obscureText: true,
-            decoration: const InputDecoration(
-              labelText: 'كلمة المرور الجديدة',
-              hintText: 'أدخل 6 أحرف على الأقل',
-            ),
-            validator: (value) {
-              if (value == null || value.length < 6) {
-                return 'يجب أن تكون كلمة المرور 6 أحرف على الأقل';
-              }
-              return null;
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("إلغاء", style: TextStyle(fontFamily: 'Cairo')),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (formKey.currentState!.validate()) {
-                try {
-                  await AuthService.changePassword(passwordController.text);
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    _showMessage(context, 'تم تغيير كلمة المرور بنجاح. يرجى تسجيل الدخول مرة أخرى.');
-                    // التوجيه لشاشة تسجيل الدخول يتم تلقائياً لأن AuthService.changePassword يسجل الخروج
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      (route) => false,
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    _showMessage(context, 'خطأ: ${e.toString()}');
-                  }
-                }
-              }
-            },
-            child: const Text("حفظ", style: TextStyle(fontFamily: 'Cairo')),
-          ),
-        ],
       ),
     );
   }
@@ -439,12 +335,6 @@ class AdminDashboard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  void _showMessage(BuildContext context, String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg, style: const TextStyle(fontFamily: 'Cairo'))),
     );
   }
 }

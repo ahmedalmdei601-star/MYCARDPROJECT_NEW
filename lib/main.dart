@@ -6,6 +6,8 @@ import 'firebase_options.dart';
 import 'providers/user_state.dart';
 import 'providers/card_state.dart';
 import 'providers/settings_provider.dart';
+import 'services/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/login_screen.dart';
 import 'screens/admin/admin_dashboard.dart';
 import 'screens/client/client_dashboard.dart';
@@ -52,6 +54,16 @@ class MyApp extends StatelessWidget {
       darkTheme: darkAppTheme,
       themeMode: settings.themeMode,
       locale: settings.locale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', ''),
+        Locale('ar', ''),
+      ],
       home: const RootScreen(),
       builder: _errorWidgetBuilder,
     );

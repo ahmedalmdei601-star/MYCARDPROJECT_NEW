@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/user_model.dart';
 import '../../services/user_services.dart';
+import '../../services/app_localizations.dart';
 import '../../theme.dart';
 import '../register_screen.dart';
 
@@ -16,10 +17,11 @@ class _ManageGroceriesScreenState extends State<ManageGroceriesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("إدارة البقالات"),
+        title: Text(l.translate('manage_groceries')),
       ),
       body: StreamBuilder<List<UserModel>>(
         stream: _userService.getClients(),
@@ -28,14 +30,14 @@ class _ManageGroceriesScreenState extends State<ManageGroceriesScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text("خطأ: ${snapshot.error}"));
+            return Center(child: Text("Error: ${snapshot.error}"));
           }
           final clients = snapshot.data ?? [];
           if (clients.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
-                "لا توجد بقالات مسجلة حالياً",
-                style: TextStyle(fontFamily: 'Cairo', fontSize: 16),
+                "No groceries found",
+                style: TextStyle(fontFamily: 'Cairo', fontSize: 16, color: Theme.of(context).textTheme.bodyMedium?.color),
               ),
             );
           }
@@ -59,14 +61,15 @@ class _ManageGroceriesScreenState extends State<ManageGroceriesScreen> {
                   ),
                   title: Text(
                     client.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Cairo',
                       fontWeight: FontWeight.bold,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
                   subtitle: Text(
                     client.phone,
-                    style: const TextStyle(fontFamily: 'Cairo'),
+                    style: TextStyle(fontFamily: 'Cairo', color: Theme.of(context).textTheme.bodyMedium?.color),
                   ),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete_outline, color: Colors.red),
@@ -87,25 +90,26 @@ class _ManageGroceriesScreenState extends State<ManageGroceriesScreen> {
         },
         backgroundColor: primaryColor,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          "إضافة بقالة",
-          style: TextStyle(fontFamily: 'Cairo', color: Colors.white),
+        label: Text(
+          l.translate('add_grocery'),
+          style: const TextStyle(fontFamily: 'Cairo', color: Colors.white),
         ),
       ),
     );
   }
 
   void _confirmDelete(BuildContext context, UserModel client) {
+    final l = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text(
-          "تأكيد الحذف",
+        title: Text(
+          l.translate('confirm_delete'),
           textAlign: TextAlign.center,
-          style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+          style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
         ),
         content: Text(
-          "هل أنت متأكد من حذف البقالة '${client.name}' نهائياً من النظام؟",
+          "${l.translate('delete_msg')} '${client.name}'",
           textAlign: TextAlign.center,
           style: const TextStyle(fontFamily: 'Cairo'),
         ),
@@ -113,7 +117,7 @@ class _ManageGroceriesScreenState extends State<ManageGroceriesScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("إلغاء", style: TextStyle(fontFamily: 'Cairo')),
+            child: Text(l.translate('cancel'), style: const TextStyle(fontFamily: 'Cairo')),
           ),
           TextButton(
             onPressed: () async {
@@ -124,7 +128,7 @@ class _ManageGroceriesScreenState extends State<ManageGroceriesScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text(
-                        "تم حذف البقالة بنجاح",
+                        "Success",
                         style: TextStyle(fontFamily: 'Cairo'),
                       ),
                     ),
@@ -135,7 +139,7 @@ class _ManageGroceriesScreenState extends State<ManageGroceriesScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        "خطأ في الحذف: $e",
+                        "Error: $e",
                         style: const TextStyle(fontFamily: 'Cairo'),
                       ),
                     ),
@@ -143,9 +147,9 @@ class _ManageGroceriesScreenState extends State<ManageGroceriesScreen> {
                 }
               }
             },
-            child: const Text(
-              "حذف",
-              style: TextStyle(fontFamily: 'Cairo', color: Colors.red),
+            child: Text(
+              l.translate('delete'),
+              style: const TextStyle(fontFamily: 'Cairo', color: Colors.red),
             ),
           ),
         ],
