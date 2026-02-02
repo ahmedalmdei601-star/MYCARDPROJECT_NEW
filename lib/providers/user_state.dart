@@ -9,9 +9,9 @@ class UserState extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   
   UserModel? _user;
-  bool _isLoading = true;
+  bool _isLoading = true; 
   String? _errorMessage;
-  bool _initializingAuth = true;
+  bool _initializingAuth = true; // Added to track initial auth state check
 
   UserModel? get user => _user;
   bool get isLoading => _isLoading;
@@ -26,32 +26,35 @@ class UserState extends ChangeNotifier {
   }
 
   Future<void> _init() async {
-    // 1. استرجاع حالة الجلسة المحفوظة محلياً (إذا كانت موجودة)
     final prefs = await SharedPreferences.getInstance();
-    final bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    final bool isLoggedInLocally = prefs.getBool('isLoggedIn') ?? false;
 
-    // 2. الاستماع لحالة المصادقة من Firebase
     _auth.authStateChanges().listen((firebaseUser) async {
       if (firebaseUser != null) {
-        // إذا كان مسجل دخول في Firebase، نحمل بياناته
         await _loadUser(firebaseUser.uid);
         await prefs.setBool('isLoggedIn', true);
       } else {
-        // إذا لم يكن مسجلاً، نصفر الحالة فقط إذا لم نكن في مرحلة التهيئة
-        if (!_initializingAuth) {
-          _user = null;
-          _errorMessage = null;
-          _isLoading = false;
-          await prefs.setBool('isLoggedIn', false);
-          notifyListeners();
-        } else if (!isLoggedIn) {
-          // إذا لم تكن هناك جلسة محفوظة، نوقف التحميل
-          _isLoading = false;
-          notifyListeners();
-        }
+        _user = null;
+        _errorMessage = null;
+        _isLoading = false;
+        await prefs.setBool('isLoggedIn', false);
+        notifyListeners();
       }
-      _initializingAuth = false;
+      _initializingAuth = false; // Auth state check is complete
     });
+
+    // If Firebase auth state changes listener hasn't completed and no local session,
+    // ensure isLoading is set to false after a short delay to prevent indefinite loading.
+    // This handles cases where Firebase might not trigger authStateChanges immediately for unauthenticated users.
+    if (_initializingAuth && !isLoggedInLocally) {
+      Future.delayed(const Duration(seconds: 1), () {
+        if (_initializingAuth) {
+          _isLoading = false;
+          notifyListeners();
+          _initializingAuth = false;
+        }
+      });
+    }
   }
 
   Future<void> _loadUser(String uid) async {
@@ -64,6 +67,8 @@ class UserState extends ChangeNotifier {
       
       if (userData != null && (userData.role == 'admin' || userData.role == 'client')) {
         _user = userData;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
       } else {
         _user = null;
         _errorMessage = 'صلاحيات المستخدم غير معرفة في النظام.';
@@ -80,9 +85,12 @@ class UserState extends ChangeNotifier {
 
   Future<void> signOut() async {
     try {
+      _isLoading = true;
+      notifyListeners();
+      
       await _auth.signOut();
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isLoggedIn', false);
+      await prefs.clear(); // Clear all shared preferences on logout
       
       _user = null;
       _errorMessage = null;
@@ -90,14 +98,9 @@ class UserState extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Error during sign out: $e');
+      _isLoading = false;
+      notifyListeners();
     }
-  }
-
-  void clearState() {
-    _user = null;
-    _errorMessage = null;
-    _isLoading = false;
-    notifyListeners();
   }
 
   Future<void> refresh() async {
@@ -106,6 +109,7 @@ class UserState extends ChangeNotifier {
       await _loadUser(currentUser.uid);
     } else {
       _user = null;
+      _isLoading = false;
       notifyListeners();
     }
   }
