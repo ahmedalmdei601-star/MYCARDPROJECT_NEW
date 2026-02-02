@@ -8,6 +8,7 @@ import 'providers/card_state.dart';
 import 'providers/settings_provider.dart';
 import 'services/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/admin/admin_dashboard.dart';
 import 'screens/client/client_dashboard.dart';
@@ -48,7 +49,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
     return MaterialApp(
-      title: 'تطبيق إدارة الكروت',
+      title: 'مدير الشبكات المحلية',
       debugShowCheckedModeBanner: false,
       theme: appTheme,
       darkTheme: darkAppTheme,
@@ -64,7 +65,7 @@ class MyApp extends StatelessWidget {
         Locale('en', ''),
         Locale('ar', ''),
       ],
-      home: const RootScreen(),
+      home: const SplashScreen(),
       builder: _errorWidgetBuilder,
     );
   }

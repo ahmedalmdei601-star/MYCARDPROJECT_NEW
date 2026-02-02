@@ -128,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                       child: const Icon(
-                        Icons.wifi_tethering_rounded,
+                        Icons.router_rounded,
                         size: 80,
                         color: primaryColor,
                       ),
@@ -136,14 +136,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 32),
                   
-                  // Welcome Text
+                  // App Title
                   Text(
-                    isAr ? 'مرحباً بك' : 'Welcome Back',
+                    isAr ? 'مدير الشبكات المحلية' : 'Local Network Manager',
                     style: const TextStyle(
-                      fontSize: 28,
+                      fontSize: 26,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Cairo',
                     ),
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -161,12 +162,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextFormField(
                     controller: identifierController,
                     keyboardType: TextInputType.emailAddress,
-                    // Force LTR for email/phone input to prevent reversal in RTL mode
                     textDirection: TextDirection.ltr,
                     textAlign: isAr ? TextAlign.right : TextAlign.left,
                     decoration: InputDecoration(
                       labelText: isAr ? 'رقم الهاتف أو البريد' : 'Phone or Email',
-                      // Align label to the right for Arabic
                       alignLabelWithHint: true,
                       prefixIcon: const Icon(Icons.person_outline_rounded, color: primaryColor),
                       border: OutlineInputBorder(
@@ -237,7 +236,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ],
                         ),
-
                       ],
                     ),
                   ],
@@ -263,9 +261,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                       TextButton(
-                        onPressed: () {
-                          // TODO: Implement Forgot Password logic
-                        },
+                        onPressed: () {},
                         child: Text(
                           isAr ? 'نسيت كلمة المرور؟' : 'Forgot Password?',
                           style: const TextStyle(color: primaryColor, fontFamily: 'Cairo', fontWeight: FontWeight.bold),
@@ -300,13 +296,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 40),
                   
                   // Footer
-                  Text(
-                    isAr ? 'نظام إدارة الشبكات المحلية للبقالات' : 'Local Grocery Network Management System',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 12,
-                      fontFamily: 'Cairo',
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: primaryColor.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'LNM - v1.0',
+                      style: TextStyle(
+                        color: primaryColor,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
                     ),
                   ),
                 ],
