@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../services/user_services.dart';
 
@@ -24,17 +25,27 @@ class UserState extends ChangeNotifier {
     _init();
   }
 
-  void _init() {
-    // الاستماع لحالة المصادقة
+  Future<void> _init() async {
+    // 1. استرجاع حالة الجلسة المحفوظة محلياً (إذا كانت موجودة)
+    final prefs = await SharedPreferences.getInstance();
+    final bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+
+    // 2. الاستماع لحالة المصادقة من Firebase
     _auth.authStateChanges().listen((firebaseUser) async {
       if (firebaseUser != null) {
-        // إذا كان هناك مستخدم، نجلب بياناته دون تصفير مسبق مفرط
+        // إذا كان مسجل دخول في Firebase، نحمل بياناته
         await _loadUser(firebaseUser.uid);
+        await prefs.setBool('isLoggedIn', true);
       } else {
-        // تصفير الحالة فقط عند تسجيل الخروج الفعلي
+        // إذا لم يكن مسجلاً، نصفر الحالة فقط إذا لم نكن في مرحلة التهيئة
         if (!_initializingAuth) {
           _user = null;
           _errorMessage = null;
+          _isLoading = false;
+          await prefs.setBool('isLoggedIn', false);
+          notifyListeners();
+        } else if (!isLoggedIn) {
+          // إذا لم تكن هناك جلسة محفوظة، نوقف التحميل
           _isLoading = false;
           notifyListeners();
         }
@@ -49,16 +60,13 @@ class UserState extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // جلب وثيقة المستخدم من Firestore
       final userData = await _userService.getUser(uid);
       
       if (userData != null && (userData.role == 'admin' || userData.role == 'client')) {
         _user = userData;
       } else {
-        // إذا لم يوجد مستند أو الدور غير معرف
         _user = null;
         _errorMessage = 'صلاحيات المستخدم غير معرفة في النظام.';
-        // لا نسجل الخروج تلقائياً هنا فوراً لمنع الحلقة المفرغة، بل نترك المستخدم يرى الخطأ
       }
     } catch (e) {
       debugPrint('Error loading user data from Firestore: $e');
@@ -73,6 +81,9 @@ class UserState extends ChangeNotifier {
   Future<void> signOut() async {
     try {
       await _auth.signOut();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', false);
+      
       _user = null;
       _errorMessage = null;
       _isLoading = false;
@@ -82,7 +93,6 @@ class UserState extends ChangeNotifier {
     }
   }
 
-  // تصفير الحالة يدوياً عند الحاجة (مثل قبل تسجيل دخول جديد)
   void clearState() {
     _user = null;
     _errorMessage = null;
@@ -90,7 +100,6 @@ class UserState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // دالة مساعدة لإعادة تحميل البيانات يدوياً
   Future<void> refresh() async {
     final currentUser = _auth.currentUser;
     if (currentUser != null) {

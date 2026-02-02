@@ -13,6 +13,49 @@ import '../login_screen.dart';
 class ClientDashboard extends StatelessWidget {
   const ClientDashboard({super.key});
 
+  void _handleLogout(BuildContext context) async {
+    final l = AppLocalizations.of(context)!;
+    final isAr = l.locale.languageCode == 'ar';
+    
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          isAr ? 'تسجيل الخروج' : 'Logout',
+          style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          isAr ? 'هل أنت متأكد من تسجيل الخروج؟' : 'Are you sure you want to logout?',
+          style: const TextStyle(fontFamily: 'Cairo'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(isAr ? 'إلغاء' : 'Cancel', style: const TextStyle(fontFamily: 'Cairo')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              isAr ? 'خروج' : 'Logout',
+              style: const TextStyle(fontFamily: 'Cairo', color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && context.mounted) {
+      final userState = Provider.of<UserState>(context, listen: false);
+      await userState.signOut();
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -192,16 +235,7 @@ class ClientDashboard extends StatelessWidget {
                   icon: Icons.logout_rounded,
                   title: l.translate('logout'),
                   color: Colors.red,
-                  onTap: () async {
-                    final userState = Provider.of<UserState>(context, listen: false);
-                    await userState.signOut();
-                    if (context.mounted) {
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                        (route) => false,
-                      );
-                    }
-                  },
+                  onTap: () => _handleLogout(context),
                 ),
               ],
             ),
