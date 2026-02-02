@@ -28,11 +28,16 @@ class _LoginScreenState extends State<LoginScreen> {
     Provider.of<UserState>(context, listen: false).clearState();
 
     try {
-      await AuthService.login(
-        identifierController.text.trim(),
-        passwordController.text.trim(),
-      );
+      final id = identifierController.text.trim();
+      final pass = passwordController.text.trim();
+      
+      print('Attempting login with identifier: $id');
+      
+      await AuthService.login(id, pass);
+      
+      print('Login successful for: $id');
     } catch (e) {
+      print('Login failed with error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
