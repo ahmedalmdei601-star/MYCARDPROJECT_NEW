@@ -21,12 +21,7 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    
-    // فرض تسجيل الخروج عند كل تشغيل للتطبيق لضمان فتح شاشة تسجيل الدخول دائماً
-    // هذا يحل مشكلة دخول التطبيق مباشرة للوحة التحكم
-    await FirebaseAuth.instance.signOut();
-    
-    debugPrint("Firebase initialized and user forced to sign out");
+    debugPrint("Firebase initialized");
   } catch (e) {
     debugPrint("Initialization error: $e");
   }
@@ -66,7 +61,6 @@ class MyApp extends StatelessWidget {
         Locale('en', ''),
         Locale('ar', ''),
       ],
-      // البداية دائماً من شاشة الترحيب
       home: const SplashScreen(),
       builder: _errorWidgetBuilder,
     );
@@ -80,54 +74,41 @@ class RootScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final userState = Provider.of<UserState>(context);
 
-    // 1. حالة التحميل
-    if (userState.isLoading) {
-      return const Scaffold(
+    // إذا كان هناك خطأ صريح، نعرضه مع زر تسجيل الخروج
+    if (userState.errorMessage != null) {
+      return Scaffold(
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('جاري التحقق من الصلاحيات...', style: TextStyle(fontFamily: 'Cairo')),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  userState.errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16, fontFamily: 'Cairo'),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => userState.signOut(),
+                  child: const Text('العودة لتسجيل الدخول', style: TextStyle(fontFamily: 'Cairo')),
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
 
-    // 2. إذا لم يكن مسجلاً (سيتم توجيهه لهنا بعد الـ signOut في الـ main)
+    // إذا لم يكن مسجلاً أو لا يزال يحمل البيانات، ننتقل لشاشة تسجيل الدخول مباشرة
+    // هذا يزيل شاشة "جاري التحقق من الصلاحيات" العالقة
     if (!userState.isAuthenticated) {
-      if (userState.errorMessage != null) {
-        return Scaffold(
-          body: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    userState.errorMessage!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 16, fontFamily: 'Cairo'),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () => userState.signOut(),
-                    child: const Text('العودة لتسجيل الدخول', style: TextStyle(fontFamily: 'Cairo')),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }
       return const LoginScreen();
     }
 
-    // 3. التوجيه بناءً على الدور (Role)
+    // التوجيه بناءً على الدور (Role)
     if (userState.isAdmin) {
       return const AdminDashboard();
     }
@@ -136,6 +117,7 @@ class RootScreen extends StatelessWidget {
       return const ClientDashboard();
     }
 
+    // حالة احتياطية: مسجل ولكن الدور غير معروف
     return const LoginScreen();
   }
 }

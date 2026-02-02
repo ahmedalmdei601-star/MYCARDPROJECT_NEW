@@ -36,8 +36,10 @@ class _LoginScreenState extends State<LoginScreen> {
       
       if (user != null) {
         debugPrint('Login successful: ${user.uid}');
-        // لا نحتاج للانتقال يدوياً هنا، لأن RootScreen يراقب authStateChanges
-        // وسيقوم بالتوجيه تلقائياً بمجرد نجاح المصادقة وتحديث UserState.
+        // تحديث حالة المستخدم يدوياً لضمان الانتقال الفوري
+        if (mounted) {
+          await Provider.of<UserState>(context, listen: false).refresh();
+        }
       } else {
         throw Exception('فشل تسجيل الدخول، يرجى التحقق من البيانات.');
       }
@@ -45,7 +47,6 @@ class _LoginScreenState extends State<LoginScreen> {
       debugPrint('Login Error: $e');
       if (mounted) {
         String errorMessage = e.toString().replaceAll('Exception: ', '');
-        // تحويل بعض أخطاء Firebase لرسائل عربية مفهومة إذا لم تكن كذلك
         if (errorMessage.contains('invalid-credential')) {
           errorMessage = 'بيانات الدخول غير صحيحة.';
         }
