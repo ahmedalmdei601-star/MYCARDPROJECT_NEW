@@ -104,14 +104,18 @@ class CardService {
     return query.docs.map((doc) => doc.data()).toList();
   }
 
-  /// جلب كرت متاح للبقالة (بدون اعتماد على الشركة)
-  Future<Map<String, dynamic>?> getAvailableCard(String clientId) async {
-    final query = await _firestore
+  /// جلب كرت متاح للبقالة (مع إمكانية الفلترة حسب الفئة)
+  Future<Map<String, dynamic>?> getAvailableCard(String clientId, {int? value}) async {
+    var queryRef = _firestore
         .collection('cards')
         .where('status', isEqualTo: 'distributed')
-        .where('ownerId', isEqualTo: clientId)
-        .limit(1)
-        .get();
+        .where('ownerId', isEqualTo: clientId);
+    
+    if (value != null) {
+      queryRef = queryRef.where('value', isEqualTo: value);
+    }
+
+    final query = await queryRef.limit(1).get();
 
     if (query.docs.isEmpty) return null;
     return query.docs.first.data();

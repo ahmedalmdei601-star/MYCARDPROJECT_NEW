@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/auth_service.dart';
+import '../../services/app_localizations.dart';
 import '../../theme.dart';
 
 class ClientInventoryScreen extends StatelessWidget {
@@ -9,12 +10,14 @@ class ClientInventoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentUser = AuthService.currentUser;
+    final l = AppLocalizations.of(context)!;
+    final isAr = l.locale.languageCode == 'ar';
 
     return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(title: const Text('مخزون الكروت')),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(title: Text(l.translate('my_cards'))),
       body: currentUser == null
-          ? const Center(child: Text('يرجى تسجيل الدخول'))
+          ? Center(child: Text(isAr ? 'يرجى تسجيل الدخول' : 'Please Login'))
           : StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('cards')
@@ -33,14 +36,14 @@ class ClientInventoryScreen extends StatelessWidget {
                       children: [
                         Icon(Icons.inventory_2_outlined, size: 80, color: Colors.grey.shade300),
                         const SizedBox(height: 20),
-                        const Text(
-                          'مخزنك فارغ حالياً',
-                          style: TextStyle(fontSize: 18, color: Colors.grey, fontWeight: FontWeight.bold),
+                        Text(
+                          isAr ? 'مخزنك فارغ حالياً' : 'Your inventory is empty',
+                          style: const TextStyle(fontSize: 18, color: Colors.grey, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
                         ),
                         const SizedBox(height: 10),
-                        const Text(
-                          'تواصل مع المسؤول لتزويدك بالكروت',
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        Text(
+                          isAr ? 'تواصل مع المسؤول لتزويدك بالكروت' : 'Contact admin to get cards',
+                          style: const TextStyle(fontSize: 14, color: Colors.grey, fontFamily: 'Cairo'),
                         ),
                       ],
                     ),
@@ -49,82 +52,117 @@ class ClientInventoryScreen extends StatelessWidget {
 
                 final docs = snapshot.data!.docs;
 
-                // تجميع الكروت حسب الشركة والقيمة
-                Map<String, Map<String, dynamic>> stats = {};
+                // Group cards by provider
+                Map<String, List<Map<String, dynamic>>> groupedStats = {};
                 for (var doc in docs) {
                   String provider = doc['provider'] ?? 'Unknown';
                   int value = doc['value'] ?? 0;
-                  String key = '$provider-$value';
                   
-                  if (!stats.containsKey(key)) {
-                    stats[key] = {
-                      'provider': provider,
-                      'value': value,
-                      'count': 0,
-                    };
+                  if (!groupedStats.containsKey(provider)) {
+                    groupedStats[provider] = [];
                   }
-                  stats[key]!['count'] += 1;
+                  
+                  // Check if this value already exists for this provider
+                  int existingIndex = groupedStats[provider]!.indexWhere((item) => item['value'] == value);
+                  if (existingIndex != -1) {
+                    groupedStats[provider]![existingIndex]['count'] += 1;
+                  } else {
+                    groupedStats[provider]!.add({
+                      'value': value,
+                      'count': 1,
+                    });
+                  }
                 }
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        'إجمالي الكروت المتاحة: ${docs.length}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
-                      ),
-                    ),
-                    Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        itemCount: stats.length,
-                        itemBuilder: (context, index) {
-                          final item = stats.values.elementAt(index);
-                          return _buildInventoryCard(
-                            provider: item['provider'],
-                            value: item['value'].toString(),
-                            count: item['count'].toString(),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+                // Sort values within each provider
+                for (var provider in groupedStats.keys) {
+                  groupedStats[provider]!.sort((a, b) => a['value'].compareTo(b['value']));
+                }
+
+                final providers = groupedStats.keys.toList()..sort();
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(24),
+                  itemCount: providers.length,
+                  itemBuilder: (context, index) {
+                    final provider = providers[index];
+                    final stats = groupedStats[provider]!;
+                    
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.business, color: primaryColor, size: 20),
+                              const SizedBox(width: 8),
+                              Text(
+                                provider,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryColor,
+                                  fontFamily: 'Cairo',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        ...stats.map((item) => _buildInventoryCard(
+                          context,
+                          provider: provider,
+                          value: item['value'].toString(),
+                          count: item['count'].toString(),
+                          isAr: isAr,
+                        )),
+                        if (index < providers.length - 1)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Divider(thickness: 2, color: primaryColor),
+                          ),
+                      ],
+                    );
+                  },
                 );
               },
             ),
     );
   }
 
-  Widget _buildInventoryCard({required String provider, required String value, required String count}) {
+  Widget _buildInventoryCard(BuildContext context, {required String provider, required String value, required String count, required bool isAr}) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.style_outlined, color: primaryColor, size: 28),
+              child: const Icon(Icons.style_outlined, color: primaryColor, size: 24),
             ),
-            const SizedBox(width: 20),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    provider,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'فئة $value ريال',
-                    style: const TextStyle(fontSize: 14, color: Colors.black54),
+                    isAr ? 'فئة $value ريال' : 'Category $value Rial',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                      fontFamily: 'Cairo',
+                    ),
                   ),
                 ],
               ),
@@ -134,11 +172,11 @@ class ClientInventoryScreen extends StatelessWidget {
               children: [
                 Text(
                   count,
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: primaryColor),
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primaryColor),
                 ),
-                const Text(
-                  'كرت',
-                  style: TextStyle(fontSize: 12, color: Colors.black45),
+                Text(
+                  isAr ? 'كرت' : 'Cards',
+                  style: const TextStyle(fontSize: 10, color: Colors.grey, fontFamily: 'Cairo'),
                 ),
               ],
             ),
