@@ -10,7 +10,7 @@ import 'distribute_screen.dart';
 import 'reports_screen.dart';
 import 'manage_groceries_screen.dart';
 import 'settings_screen.dart';
-import '../register_screen.dart';
+import 'admin_cards_screen.dart';
 import '../login_screen.dart';
 
 class AdminDashboard extends StatelessWidget {
@@ -19,6 +19,8 @@ class AdminDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+    final isAr = l.locale.languageCode == 'ar';
+    
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -94,6 +96,14 @@ class AdminDashboard extends StatelessWidget {
                       ),
                       _buildMenuCard(
                         context,
+                        title: isAr ? 'عرض الكروت' : 'View Cards',
+                        subtitle: isAr ? 'فرز حسب الفئة والحالة' : 'Sort by category & status',
+                        icon: Icons.style_outlined,
+                        color: Colors.indigo,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminCardsScreen())),
+                      ),
+                      _buildMenuCard(
+                        context,
                         title: l.translate('distribute_cards'),
                         subtitle: l.translate('distribute_cards_sub'),
                         icon: Icons.move_to_inbox_outlined,
@@ -103,10 +113,18 @@ class AdminDashboard extends StatelessWidget {
                       _buildMenuCard(
                         context,
                         title: l.translate('reports'),
-                        subtitle: l.translate('reports_sub'),
+                        subtitle: isAr ? 'سجل التوزيع والإحصائيات' : 'Distribution & Stats',
                         icon: Icons.analytics_outlined,
                         color: Colors.purple,
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen())),
+                      ),
+                      _buildMenuCard(
+                        context,
+                        title: l.translate('settings'),
+                        subtitle: isAr ? 'اللغة والمظهر' : 'Lang & Theme',
+                        icon: Icons.settings_outlined,
+                        color: Colors.grey,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
                       ),
                     ],
                   ),
@@ -121,6 +139,7 @@ class AdminDashboard extends StatelessWidget {
 
   Widget _buildDrawer(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+    final isAr = l.locale.languageCode == 'ar';
     return Drawer(
       child: Column(
         children: [
@@ -160,6 +179,15 @@ class AdminDashboard extends StatelessWidget {
                 ),
                 _buildDrawerItem(
                   context,
+                  icon: Icons.style_outlined,
+                  title: isAr ? 'عرض الكروت' : 'View Cards',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminCardsScreen()));
+                  },
+                ),
+                _buildDrawerItem(
+                  context,
                   icon: Icons.move_to_inbox_outlined,
                   title: l.translate('distribute_cards'),
                   onTap: () {
@@ -186,16 +214,6 @@ class AdminDashboard extends StatelessWidget {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
                   },
                 ),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.info_outline,
-                  title: l.translate('about_us'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showAboutDialog(context);
-                  },
-                ),
-                const Divider(),
                 _buildDrawerItem(
                   context,
                   icon: Icons.logout_rounded,
@@ -302,38 +320,6 @@ class AdminDashboard extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _showAboutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('حول التطبيق', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo')),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "تم تطوير هذا التطبيق بواسطة المهندس أحمد المدي",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            Text(
-              "البريد الإلكتروني:\nahmedalmdei601@gmail.com",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'Cairo', fontSize: 14),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("إغلاق", style: TextStyle(fontFamily: 'Cairo')),
-          ),
-        ],
       ),
     );
   }

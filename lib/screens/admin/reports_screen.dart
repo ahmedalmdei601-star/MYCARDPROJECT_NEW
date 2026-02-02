@@ -2,47 +2,52 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart' as intl;
 import '../../theme.dart';
+import '../../services/app_localizations.dart';
 
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final isAr = l.locale.languageCode == 'ar';
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: backgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          title: const Text('التقارير والإحصائيات'),
-          bottom: const TabBar(
+          title: Text(isAr ? 'التقارير والإحصائيات' : 'Reports & Stats'),
+          bottom: TabBar(
             indicatorColor: Colors.white,
             indicatorWeight: 3,
-            labelStyle: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
-            unselectedLabelStyle: TextStyle(fontFamily: 'Cairo'),
+            labelStyle: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+            unselectedLabelStyle: const TextStyle(fontFamily: 'Cairo'),
             tabs: [
-              Tab(text: 'إحصائيات الكروت'),
-              Tab(text: 'سجل العمليات'),
+              Tab(text: isAr ? 'إحصائيات الكروت' : 'Card Stats'),
+              Tab(text: isAr ? 'سجل التوزيع' : 'Distribution History'),
             ],
           ),
         ),
         body: TabBarView(
           children: [
-            _buildCardStats(),
-            _buildTransactionsList(),
+            _buildCardStats(isAr),
+            _buildDistributionList(isAr),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTransactionsList() {
+  Widget _buildDistributionList(bool isAr) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('transactions')
-          .orderBy('timestamp', descending: true)
+          .collection('cards')
+          .where('status', isEqualTo: 'distributed')
+          .orderBy('distributedAt', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.hasError) return Center(child: Text('خطأ: ${snapshot.error}'));
+        if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -55,7 +60,10 @@ class ReportsScreen extends StatelessWidget {
               children: [
                 Icon(Icons.history_toggle_off, size: 80, color: Colors.grey.shade300),
                 const SizedBox(height: 20),
-                const Text('لا توجد عمليات بيع مسجلة حالياً', style: TextStyle(color: Colors.grey)),
+                Text(
+                  isAr ? 'لا توجد عمليات توزيع مسجلة حالياً' : 'No distribution records found',
+                  style: const TextStyle(color: Colors.grey, fontFamily: 'Cairo'),
+                ),
               ],
             ),
           );
@@ -66,28 +74,53 @@ class ReportsScreen extends StatelessWidget {
           itemCount: docs.length,
           itemBuilder: (context, index) {
             final data = docs[index].data() as Map<String, dynamic>;
-            final date = (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
-            return Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    shape: BoxShape.circle,
+            final date = (data['distributedAt'] as Timestamp?)?.toDate() ?? DateTime.now();
+            
+            return FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance.collection('users').doc(data['ownerId']).get(),
+              builder: (context, userSnap) {
+                String clientName = isAr ? 'تحميل...' : 'Loading...';
+                if (userSnap.hasData && userSnap.data!.exists) {
+                  clientName = userSnap.data!['name'] ?? 'Unknown';
+                }
+
+                return Card(
+                  elevation: 0,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(color: Colors.grey.withOpacity(0.1)),
                   ),
-                  child: const Icon(Icons.shopping_cart_outlined, color: Colors.blue, size: 20),
-                ),
-                title: Text('زبون: ${data['customerPhone']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('كرت: ${data['cardId']}', style: const TextStyle(fontSize: 12)),
-                    Text(intl.DateFormat('yyyy-MM-dd HH:mm').format(date), style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                  ],
-                ),
-                isThreeLine: true,
-              ),
+                  child: ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.local_shipping_outlined, color: Colors.orange, size: 20),
+                    ),
+                    title: Text(
+                      "${isAr ? 'إلى' : 'To'}: $clientName",
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "${data['provider']} - فئة ${data['value']}",
+                          style: const TextStyle(fontSize: 12, fontFamily: 'Cairo'),
+                        ),
+                        Text(
+                          intl.DateFormat('yyyy-MM-dd HH:mm').format(date),
+                          style: const TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    isThreeLine: true,
+                  ),
+                );
+              },
             );
           },
         );
@@ -95,7 +128,7 @@ class ReportsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCardStats() {
+  Widget _buildCardStats(bool isAr) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('cards').snapshots(),
       builder: (context, snapshot) {
@@ -113,17 +146,17 @@ class ReportsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'ملخص حالة الكروت',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+              Text(
+                isAr ? 'ملخص حالة الكروت' : 'Card Status Summary',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87, fontFamily: 'Cairo'),
               ),
               const SizedBox(height: 20),
               
-              _buildModernStatCard('كروت متاحة (الأدمن)', available, Icons.inventory_2, Colors.green),
+              _buildModernStatCard(isAr ? 'كروت في النظام' : 'In System', available, Icons.inventory_2, Colors.green),
               const SizedBox(height: 16),
-              _buildModernStatCard('كروت موزعة (البقالات)', distributed, Icons.storefront, Colors.orange),
+              _buildModernStatCard(isAr ? 'كروت موزعة' : 'Distributed', distributed, Icons.storefront, Colors.orange),
               const SizedBox(height: 16),
-              _buildModernStatCard('كروت مباعة (للزبائن)', used, Icons.sell, Colors.blue),
+              _buildModernStatCard(isAr ? 'كروت مباعة' : 'Sold', used, Icons.sell, Colors.blue),
               
               const SizedBox(height: 40),
               
@@ -131,8 +164,8 @@ class ReportsScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [primaryColor, primaryColor.withOpacity(0.8)],
+                  gradient: const LinearGradient(
+                    colors: [primaryColor, Color(0xFF2E7D32)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -147,9 +180,9 @@ class ReportsScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    const Text(
-                      'إجمالي الكروت في النظام',
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
+                    Text(
+                      isAr ? 'إجمالي الكروت في النظام' : 'Total Cards in System',
+                      style: const TextStyle(color: Colors.white70, fontSize: 14, fontFamily: 'Cairo'),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -189,7 +222,7 @@ class ReportsScreen extends StatelessWidget {
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87, fontFamily: 'Cairo'),
               ),
             ),
             Text(
