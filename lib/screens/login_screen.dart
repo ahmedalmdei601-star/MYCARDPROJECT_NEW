@@ -25,23 +25,33 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => loading = true);
-    Provider.of<UserState>(context, listen: false).clearState();
+    
+    // Clear state before login attempt
+    final userState = Provider.of<UserState>(context, listen: false);
+    userState.clearState();
 
     try {
       final id = identifierController.text.trim();
       final pass = passwordController.text.trim();
       
-      print('Attempting login with identifier: $id');
+      debugPrint('Attempting login for: $id');
       
-      await AuthService.login(id, pass);
+      final user = await AuthService.login(id, pass);
       
-      print('Login successful for: $id');
+      if (user != null) {
+        debugPrint('Login successful: ${user.uid}');
+        // Navigation is handled by UserState/Auth wrapper usually, 
+        // but if not, ensure the state is updated.
+      }
     } catch (e) {
-      print('Login failed with error: $e');
+      debugPrint('Login Error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', ''), style: const TextStyle(fontFamily: 'Cairo')),
+            content: Text(
+              e.toString().replaceAll('Exception: ', ''), 
+              style: const TextStyle(fontFamily: 'Cairo')
+            ),
             backgroundColor: errorColor,
             behavior: SnackBarBehavior.floating,
           ),
@@ -75,14 +85,15 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo Section - Professional Router Icon
+                  // Logo Section
                   Hero(
                     tag: 'logo',
                     child: Container(
-                      padding: const EdgeInsets.all(20),
+                      width: 120,
+                      height: 120,
                       decoration: BoxDecoration(
-                        color: primaryColor.withOpacity(0.1),
-                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
                         boxShadow: [
                           BoxShadow(
                             color: primaryColor.withOpacity(0.1),
@@ -91,10 +102,19 @@ class _LoginScreenState extends State<LoginScreen> {
                           )
                         ],
                       ),
-                      child: const Icon(
-                        Icons.settings_input_antenna_rounded,
-                        size: 80,
-                        color: primaryColor,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(30),
+                        child: Image.asset(
+                          'assets/icons/app_icon.png',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.settings_input_antenna_rounded,
+                              size: 60,
+                              color: primaryColor,
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),

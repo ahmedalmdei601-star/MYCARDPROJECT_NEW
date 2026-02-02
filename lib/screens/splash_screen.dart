@@ -49,16 +49,34 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // New Professional Icon
               Container(
-                padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
                   color: Colors.white,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(35),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
                 ),
-                child: const Icon(
-                  Icons.settings_input_antenna_rounded,
-                  size: 80,
-                  color: primaryColor,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(35),
+                  child: Image.asset(
+                    'assets/icons/app_icon.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(
+                        Icons.settings_input_antenna_rounded,
+                        size: 80,
+                        color: primaryColor,
+                      );
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 30),
