@@ -74,7 +74,17 @@ class RootScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final userState = Provider.of<UserState>(context);
 
-    // إذا كان هناك خطأ صريح، نعرضه مع زر تسجيل الخروج
+    // 1. حالة التحميل الأولية: نبقى في شاشة بيضاء أو مؤشر تحميل بسيط 
+    // لكي لا تظهر شاشة تسجيل الدخول للحظات
+    if (userState.isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: primaryColor),
+        ),
+      );
+    }
+
+    // 2. إذا كان هناك خطأ صريح
     if (userState.errorMessage != null) {
       return Scaffold(
         body: Center(
@@ -102,21 +112,12 @@ class RootScreen extends StatelessWidget {
       );
     }
 
-    // إذا كان النظام لا يزال في مرحلة التحميل الأولية، نظهر مؤشر تحميل بسيط
-    if (userState.isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(color: primaryColor),
-        ),
-      );
-    }
-
-    // التوجيه بناءً على حالة المصادقة
+    // 3. التوجيه بناءً على حالة المصادقة
     if (!userState.isAuthenticated) {
       return const LoginScreen();
     }
 
-    // التوجيه بناءً على الدور (Role)
+    // 4. التوجيه بناءً على الدور (Role)
     if (userState.isAdmin) {
       return const AdminDashboard();
     }
@@ -125,7 +126,7 @@ class RootScreen extends StatelessWidget {
       return const ClientDashboard();
     }
 
-    // حالة احتياطية: مسجل ولكن الدور غير معروف
+    // حالة احتياطية
     return const LoginScreen();
   }
 }

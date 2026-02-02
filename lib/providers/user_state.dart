@@ -9,7 +9,7 @@ class UserState extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   
   UserModel? _user;
-  bool _isLoading = true;
+  bool _isLoading = true; // نبدأ دائماً بحالة تحميل
   String? _errorMessage;
   bool _initializingAuth = true;
 
@@ -26,35 +26,23 @@ class UserState extends ChangeNotifier {
   }
 
   Future<void> _init() async {
-    // 1. استرجاع حالة الجلسة المحفوظة محلياً (إذا كانت موجودة)
+    // 1. استرجاع حالة الجلسة المحفوظة محلياً
     final prefs = await SharedPreferences.getInstance();
-    final bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-
-    // إذا كانت هناك جلسة محفوظة، نبقى في حالة التحميل حتى ينتهي Firebase من التحقق
-    _isLoading = isLoggedIn;
-    notifyListeners();
+    final bool isLoggedInLocal = prefs.getBool('isLoggedIn') ?? false;
 
     // 2. الاستماع لحالة المصادقة من Firebase
     _auth.authStateChanges().listen((firebaseUser) async {
       if (firebaseUser != null) {
-        // إذا كان مسجل دخول في Firebase، نحمل بياناته
+        // إذا كان مسجل دخول، نحمل البيانات
         await _loadUser(firebaseUser.uid);
         await prefs.setBool('isLoggedIn', true);
       } else {
-        // إذا لم يكن مسجلاً، نصفر الحالة فقط إذا لم نكن في مرحلة التهيئة
-        if (!_initializingAuth) {
-          _user = null;
-          _errorMessage = null;
-          _isLoading = false;
-          await prefs.setBool('isLoggedIn', false);
-          notifyListeners();
-        } else {
-          // إذا لم تكن هناك جلسة في Firebase أثناء التهيئة
-          _user = null;
-          _isLoading = false;
-          await prefs.setBool('isLoggedIn', false);
-          notifyListeners();
-        }
+        // إذا لم يكن مسجلاً، نصفر الحالة ونوقف التحميل
+        _user = null;
+        _errorMessage = null;
+        _isLoading = false;
+        await prefs.setBool('isLoggedIn', false);
+        notifyListeners();
       }
       _initializingAuth = false;
     });
@@ -75,9 +63,9 @@ class UserState extends ChangeNotifier {
         _errorMessage = 'صلاحيات المستخدم غير معرفة في النظام.';
       }
     } catch (e) {
-      debugPrint('Error loading user data from Firestore: $e');
+      debugPrint('Error loading user data: $e');
       _user = null;
-      _errorMessage = 'فشل جلب بيانات الصلاحيات من الخادم.';
+      _errorMessage = 'فشل جلب بيانات الصلاحيات.';
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -112,6 +100,7 @@ class UserState extends ChangeNotifier {
       await _loadUser(currentUser.uid);
     } else {
       _user = null;
+      _isLoading = false;
       notifyListeners();
     }
   }
