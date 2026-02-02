@@ -14,7 +14,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final identifierController = TextEditingController(text: "777575817@gmail.com");
+  final identifierController = TextEditingController();
   final passwordController = TextEditingController();
   
   bool loading = false;
@@ -161,9 +161,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextFormField(
                     controller: identifierController,
                     keyboardType: TextInputType.emailAddress,
+                    // Force LTR for email/phone input to prevent reversal in RTL mode
+                    textDirection: TextDirection.ltr,
                     textAlign: isAr ? TextAlign.right : TextAlign.left,
                     decoration: InputDecoration(
                       labelText: isAr ? 'رقم الهاتف أو البريد' : 'Phone or Email',
+                      // Align label to the right for Arabic
+                      alignLabelWithHint: true,
                       prefixIcon: const Icon(Icons.person_outline_rounded, color: primaryColor),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
