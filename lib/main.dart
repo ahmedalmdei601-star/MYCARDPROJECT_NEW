@@ -22,10 +22,7 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     
-    // فرض تسجيل الخروج عند كل تشغيل للتطبيق لضمان فتح شاشة تسجيل الدخول دائماً
-    await FirebaseAuth.instance.signOut();
-    
-    debugPrint("Firebase initialized and user signed out for fresh start");
+    debugPrint("Firebase initialized successfully");
   } catch (e) {
     debugPrint("Initialization error: $e");
   }
@@ -65,6 +62,7 @@ class MyApp extends StatelessWidget {
         Locale('en', ''),
         Locale('ar', ''),
       ],
+      // البداية من شاشة الترحيب التي ستنتقل بدورها إلى RootScreen
       home: const SplashScreen(),
       builder: _errorWidgetBuilder,
     );
@@ -81,11 +79,20 @@ class RootScreen extends StatelessWidget {
     // 1. حالة التحميل
     if (userState.isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('جاري التحقق من الصلاحيات...', style: TextStyle(fontFamily: 'Cairo')),
+            ],
+          ),
+        ),
       );
     }
 
-    // 2. إذا لم يكن مسجلاً (أو حدث خطأ في الصلاحيات)
+    // 2. إذا لم يكن مسجلاً
     if (!userState.isAuthenticated) {
       if (userState.errorMessage != null) {
         return Scaffold(
@@ -105,7 +112,7 @@ class RootScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () => userState.signOut(),
-                    child: const Text('العودة لتسجيل الدخول'),
+                    child: const Text('العودة لتسجيل الدخول', style: TextStyle(fontFamily: 'Cairo')),
                   ),
                 ],
               ),
@@ -125,8 +132,24 @@ class RootScreen extends StatelessWidget {
       return const ClientDashboard();
     }
 
-    // 4. حالة احتياطية
-    return const LoginScreen();
+    // 4. حالة احتياطية إذا كان مسجل ولكن الدور غير معروف
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.warning_amber_rounded, size: 64, color: Colors.orange),
+            const SizedBox(height: 16),
+            const Text('حسابك مسجل ولكن لا يمتلك صلاحيات وصول.', style: TextStyle(fontFamily: 'Cairo')),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => userState.signOut(),
+              child: const Text('تسجيل الخروج', style: TextStyle(fontFamily: 'Cairo')),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

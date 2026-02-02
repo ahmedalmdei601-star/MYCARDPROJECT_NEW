@@ -26,10 +26,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => loading = true);
     
-    // Clear state before login attempt
-    final userState = Provider.of<UserState>(context, listen: false);
-    userState.clearState();
-
     try {
       final id = identifierController.text.trim();
       final pass = passwordController.text.trim();
@@ -40,18 +36,23 @@ class _LoginScreenState extends State<LoginScreen> {
       
       if (user != null) {
         debugPrint('Login successful: ${user.uid}');
-        // Navigation is handled by UserState/Auth wrapper usually, 
-        // but if not, ensure the state is updated.
+        // لا نحتاج للانتقال يدوياً هنا، لأن RootScreen يراقب authStateChanges
+        // وسيقوم بالتوجيه تلقائياً بمجرد نجاح المصادقة وتحديث UserState.
+      } else {
+        throw Exception('فشل تسجيل الدخول، يرجى التحقق من البيانات.');
       }
     } catch (e) {
       debugPrint('Login Error: $e');
       if (mounted) {
+        String errorMessage = e.toString().replaceAll('Exception: ', '');
+        // تحويل بعض أخطاء Firebase لرسائل عربية مفهومة إذا لم تكن كذلك
+        if (errorMessage.contains('invalid-credential')) {
+          errorMessage = 'بيانات الدخول غير صحيحة.';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              e.toString().replaceAll('Exception: ', ''), 
-              style: const TextStyle(fontFamily: 'Cairo')
-            ),
+            content: Text(errorMessage, style: const TextStyle(fontFamily: 'Cairo')),
             backgroundColor: errorColor,
             behavior: SnackBarBehavior.floating,
           ),

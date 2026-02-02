@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'login_screen.dart';
+import '../main.dart'; // Import to access RootScreen
 import '../theme.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -26,8 +26,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     Timer(const Duration(seconds: 3), () {
       if (mounted) {
+        // الانتقال إلى RootScreen بدلاً من LoginScreen مباشرة
+        // لكي يتم فحص حالة المستخدم (هل هو مسجل دخول أم لا)
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          MaterialPageRoute(builder: (_) => const RootScreen()),
         );
       }
     });
@@ -49,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // New Professional Icon
+              // Professional Network Icon
               Container(
                 width: 140,
                 height: 140,
