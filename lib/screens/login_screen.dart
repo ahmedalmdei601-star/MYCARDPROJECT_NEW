@@ -24,13 +24,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    // نضمن أن الحالة نظيفة عند دخول شاشة تسجيل الدخول
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final userState = Provider.of<UserState>(context, listen: false);
-      if (userState.isAuthenticated) {
-        userState.clearState();
-      }
-    });
   }
 
   Future<void> login() async {
@@ -42,27 +35,20 @@ class _LoginScreenState extends State<LoginScreen> {
       final id = identifierController.text.trim();
       final pass = passwordController.text.trim();
       
-      debugPrint('Attempting login for: $id');
-      
       final user = await AuthService.login(id, pass);
       
       if (user != null) {
-        debugPrint('Login successful: ${user.uid}');
         if (mounted) {
-          // تحديث حالة المستخدم يدوياً لضمان الانتقال الفوري عبر RootScreen
+          // تحديث حالة المستخدم في الـ Provider
+          // الـ RootScreen سيقوم بالتوجيه تلقائياً فور نجاح التحديث
           await Provider.of<UserState>(context, listen: false).refresh();
         }
       } else {
-        throw Exception('فشل تسجيل الدخول، يرجى التحقق من البيانات.');
+        throw Exception('بيانات الدخول غير صحيحة.');
       }
     } catch (e) {
-      debugPrint('Login Error: $e');
       if (mounted) {
         String errorMessage = e.toString().replaceAll('Exception: ', '');
-        if (errorMessage.contains('invalid-credential')) {
-          errorMessage = 'بيانات الدخول غير صحيحة.';
-        }
-        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage, style: const TextStyle(fontFamily: 'Cairo')),
@@ -164,7 +150,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: isAr ? TextAlign.right : TextAlign.left,
                     decoration: InputDecoration(
                       labelText: isAr ? 'رقم الهاتف أو البريد' : 'Phone or Email',
-                      alignLabelWithHint: true,
                       prefixIcon: const Icon(Icons.person_outline_rounded, color: primaryColor),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),

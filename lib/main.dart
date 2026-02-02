@@ -21,7 +21,6 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    debugPrint("Firebase initialized");
   } catch (e) {
     debugPrint("Initialization error: $e");
   }
@@ -72,62 +71,61 @@ class RootScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final userState = Provider.of<UserState>(context);
-
-    // 1. حالة التحميل الأولية: نبقى في شاشة بيضاء أو مؤشر تحميل بسيط 
-    // لكي لا تظهر شاشة تسجيل الدخول للحظات
-    if (userState.isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(color: primaryColor),
-        ),
-      );
-    }
-
-    // 2. إذا كان هناك خطأ صريح
-    if (userState.errorMessage != null) {
-      return Scaffold(
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                const SizedBox(height: 16),
-                Text(
-                  userState.errorMessage!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 16, fontFamily: 'Cairo'),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () => userState.signOut(),
-                  child: const Text('العودة لتسجيل الدخول', style: TextStyle(fontFamily: 'Cairo')),
-                ),
-              ],
+    return Consumer<UserState>(
+      builder: (context, userState, child) {
+        // إذا كان النظام لا يزال في حالة تحميل أولية، نظهر مؤشر تحميل صامت
+        if (userState.isLoading) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(color: primaryColor),
             ),
-          ),
-        ),
-      );
-    }
+          );
+        }
 
-    // 3. التوجيه بناءً على حالة المصادقة
-    if (!userState.isAuthenticated) {
-      return const LoginScreen();
-    }
+        // إذا كان هناك خطأ في جلب بيانات المستخدم
+        if (userState.errorMessage != null) {
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                    const SizedBox(height: 16),
+                    Text(
+                      userState.errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 16, fontFamily: 'Cairo'),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () => userState.signOut(),
+                      child: const Text('العودة لتسجيل الدخول', style: TextStyle(fontFamily: 'Cairo')),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
 
-    // 4. التوجيه بناءً على الدور (Role)
-    if (userState.isAdmin) {
-      return const AdminDashboard();
-    }
+        // التوجيه بناءً على حالة المصادقة
+        if (!userState.isAuthenticated) {
+          return const LoginScreen();
+        }
 
-    if (userState.isClient) {
-      return const ClientDashboard();
-    }
+        // التوجيه بناءً على الدور (Role)
+        if (userState.isAdmin) {
+          return const AdminDashboard();
+        } else if (userState.isClient) {
+          return const ClientDashboard();
+        }
 
-    // حالة احتياطية
-    return const LoginScreen();
+        // حالة احتياطية إذا كان مسجل دخول ولكن بدون دور معروف
+        return const LoginScreen();
+      },
+    );
   }
 }
 

@@ -9,7 +9,7 @@ class UserState extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   
   UserModel? _user;
-  bool _isLoading = true; // نبدأ دائماً بحالة تحميل
+  bool _isLoading = true; 
   String? _errorMessage;
   bool _initializingAuth = true;
 
@@ -26,22 +26,15 @@ class UserState extends ChangeNotifier {
   }
 
   Future<void> _init() async {
-    // 1. استرجاع حالة الجلسة المحفوظة محلياً
-    final prefs = await SharedPreferences.getInstance();
-    final bool isLoggedInLocal = prefs.getBool('isLoggedIn') ?? false;
-
-    // 2. الاستماع لحالة المصادقة من Firebase
+    // الاستماع لحالة المصادقة من Firebase
     _auth.authStateChanges().listen((firebaseUser) async {
+      _initializingAuth = true;
       if (firebaseUser != null) {
-        // إذا كان مسجل دخول، نحمل البيانات
         await _loadUser(firebaseUser.uid);
-        await prefs.setBool('isLoggedIn', true);
       } else {
-        // إذا لم يكن مسجلاً، نصفر الحالة ونوقف التحميل
         _user = null;
         _errorMessage = null;
         _isLoading = false;
-        await prefs.setBool('isLoggedIn', false);
         notifyListeners();
       }
       _initializingAuth = false;
@@ -58,6 +51,9 @@ class UserState extends ChangeNotifier {
       
       if (userData != null && (userData.role == 'admin' || userData.role == 'client')) {
         _user = userData;
+        // حفظ الجلسة محلياً
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
       } else {
         _user = null;
         _errorMessage = 'صلاحيات المستخدم غير معرفة في النظام.';
@@ -74,6 +70,9 @@ class UserState extends ChangeNotifier {
 
   Future<void> signOut() async {
     try {
+      _isLoading = true;
+      notifyListeners();
+      
       await _auth.signOut();
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', false);
@@ -84,6 +83,8 @@ class UserState extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Error during sign out: $e');
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
