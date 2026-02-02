@@ -2,113 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../providers/user_state.dart';
+import '../../services/app_localizations.dart';
 import '../../theme.dart';
 import 'send_card_screen.dart';
 import 'client_inventory_screen.dart';
 import 'client_history_screen.dart';
+import '../admin/settings_screen.dart';
 import '../login_screen.dart';
 
 class ClientDashboard extends StatelessWidget {
   const ClientDashboard({super.key});
 
-  void _showChangePasswordDialog(BuildContext context) {
-    final passwordController = TextEditingController();
-    showDialog(
-      context: context,
-      barrierDismissible: false, // منع الإغلاق العشوائي أثناء العملية
-      builder: (dialogContext) => AlertDialog(
-        title: const Text("تغيير كلمة المرور", textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo')),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              "أدخل كلمة المرور الجديدة الخاصة بك. سيتم تسجيل خروجك تلقائياً بعد التغيير.",
-              style: TextStyle(fontSize: 14, color: Colors.black54, fontFamily: 'Cairo'),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: "كلمة المرور الجديدة",
-                prefixIcon: Icon(Icons.lock_outline, color: primaryColor),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              passwordController.dispose();
-            },
-            child: const Text("إلغاء", style: TextStyle(fontFamily: 'Cairo')),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final newPassword = passwordController.text.trim();
-              if (newPassword.length < 6) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("كلمة المرور يجب أن تكون 6 أحرف على الأقل", style: TextStyle(fontFamily: 'Cairo'))),
-                );
-                return;
-              }
-              
-              // إغلاق الديالوج قبل البدء بالعمليات الثقيلة لتجنب أخطاء الـ context
-              Navigator.pop(dialogContext);
-              
-              try {
-                // 1. تغيير كلمة المرور (الدالة تقوم بـ signOut داخلياً أيضاً)
-                await AuthService.changePassword(newPassword);
-                
-                // 2. تنظيف الحالة محلياً في Provider
-                if (context.mounted) {
-                  final userState = Provider.of<UserState>(context, listen: false);
-                  userState.clearState();
-                  
-                  // 3. إظهار رسالة النجاح
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("تم تغيير كلمة المرور بنجاح. يرجى تسجيل الدخول مجدداً.", style: TextStyle(fontFamily: 'Cairo')),
-                      backgroundColor: primaryColor,
-                    ),
-                  );
-
-                  // 4. التوجيه الفوري لشاشة تسجيل الدخول ومسح الـ stack
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("خطأ: $e", style: const TextStyle(fontFamily: 'Cairo')), backgroundColor: errorColor),
-                  );
-                }
-              } finally {
-                passwordController.dispose();
-              }
-            },
-            child: const Text("تحديث", style: TextStyle(fontFamily: 'Cairo')),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final userState = Provider.of<UserState>(context);
-    final userName = userState.user?.name ?? "صاحب البقالة";
+    final userName = userState.user?.name ?? (l.locale.languageCode == 'ar' ? "صاحب البقالة" : "Store Owner");
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("متجري"),
+        title: Text(l.translate('my_store')),
       ),
       drawer: _buildDrawer(context, userName),
       body: LayoutBuilder(
@@ -131,7 +45,7 @@ class ClientDashboard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "مرحباً، $userName",
+                        "${l.translate('welcome')}, $userName",
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 22,
@@ -140,9 +54,9 @@ class ClientDashboard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        "إليك نظرة سريعة على كروتك وعملياتك",
-                        style: TextStyle(
+                      Text(
+                        l.translate('client_summary'),
+                        style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 13,
                           fontFamily: 'Cairo',
@@ -164,35 +78,35 @@ class ClientDashboard extends StatelessWidget {
                     children: [
                       _buildMenuCard(
                         context,
-                        title: "إرسال كرت",
-                        subtitle: "بيع كرت لعميل",
+                        title: l.translate('send_card'),
+                        subtitle: l.translate('send_card_sub'),
                         icon: Icons.send_to_mobile_outlined,
                         color: Colors.orange,
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SendCardScreen())),
                       ),
                       _buildMenuCard(
                         context,
-                        title: "كروتي",
-                        subtitle: "الكروت المتاحة",
+                        title: l.translate('my_cards'),
+                        subtitle: l.translate('my_cards_sub'),
                         icon: Icons.inventory_2_outlined,
                         color: Colors.teal,
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ClientInventoryScreen())),
                       ),
                       _buildMenuCard(
                         context,
-                        title: "السجل",
-                        subtitle: "عمليات البيع",
+                        title: l.translate('history'),
+                        subtitle: l.translate('history_sub'),
                         icon: Icons.history_edu_outlined,
                         color: Colors.blue,
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ClientHistoryScreen())),
                       ),
                       _buildMenuCard(
                         context,
-                        title: "الأمان",
-                        subtitle: "تغيير كلمة المرور",
-                        icon: Icons.security_outlined,
-                        color: Colors.redAccent,
-                        onTap: () => _showChangePasswordDialog(context),
+                        title: l.translate('settings'),
+                        subtitle: l.translate('settings_sub'),
+                        icon: Icons.settings_outlined,
+                        color: Colors.purple,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
                       ),
                     ],
                   ),
@@ -206,6 +120,7 @@ class ClientDashboard extends StatelessWidget {
   }
 
   Widget _buildDrawer(BuildContext context, String userName) {
+    final l = AppLocalizations.of(context)!;
     return Drawer(
       child: Column(
         children: [
@@ -219,31 +134,34 @@ class ClientDashboard extends StatelessWidget {
               userName,
               style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
             ),
-            accountEmail: const Text("حساب البقالة", style: TextStyle(fontFamily: 'Cairo')),
+            accountEmail: Text(l.translate('store_account'), style: const TextStyle(fontFamily: 'Cairo')),
           ),
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
                 _buildDrawerItem(
+                  context,
                   icon: Icons.send_to_mobile_outlined,
-                  title: "إرسال كرت",
+                  title: l.translate('send_card'),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const SendCardScreen()));
                   },
                 ),
                 _buildDrawerItem(
+                  context,
                   icon: Icons.inventory_2_outlined,
-                  title: "مخزن الكروت",
+                  title: l.translate('my_cards'),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ClientInventoryScreen()));
                   },
                 ),
                 _buildDrawerItem(
+                  context,
                   icon: Icons.history_edu_outlined,
-                  title: "سجل المبيعات",
+                  title: l.translate('history'),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ClientHistoryScreen()));
@@ -251,16 +169,18 @@ class ClientDashboard extends StatelessWidget {
                 ),
                 const Divider(),
                 _buildDrawerItem(
+                  context,
                   icon: Icons.settings_outlined,
-                  title: "الإعدادات",
+                  title: l.translate('settings'),
                   onTap: () {
                     Navigator.pop(context);
-                    _showSettingsDialog(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
                   },
                 ),
                 _buildDrawerItem(
+                  context,
                   icon: Icons.info_outline,
-                  title: "حولنا",
+                  title: l.translate('about_us'),
                   onTap: () {
                     Navigator.pop(context);
                     _showAboutDialog(context);
@@ -268,8 +188,9 @@ class ClientDashboard extends StatelessWidget {
                 ),
                 const Divider(),
                 _buildDrawerItem(
+                  context,
                   icon: Icons.logout_rounded,
-                  title: "تسجيل الخروج",
+                  title: l.translate('logout'),
                   color: Colors.red,
                   onTap: () async {
                     final userState = Provider.of<UserState>(context, listen: false);
@@ -290,7 +211,8 @@ class ClientDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildDrawerItem({
+  Widget _buildDrawerItem(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
@@ -302,7 +224,7 @@ class ClientDashboard extends StatelessWidget {
         title,
         style: TextStyle(
           fontFamily: 'Cairo',
-          color: color ?? Colors.black87,
+          color: color ?? Theme.of(context).textTheme.bodyLarge?.color,
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -346,10 +268,10 @@ class ClientDashboard extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   fontFamily: 'Cairo',
                 ),
                 textAlign: TextAlign.center,
@@ -359,9 +281,9 @@ class ClientDashboard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
-                  color: Colors.black45,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                   fontFamily: 'Cairo',
                 ),
                 textAlign: TextAlign.center,
@@ -375,61 +297,18 @@ class ClientDashboard extends StatelessWidget {
     );
   }
 
-  void _showSettingsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('الإعدادات', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo')),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.language, color: primaryColor),
-              title: const Text('لغة التطبيق', style: TextStyle(fontFamily: 'Cairo')),
-              subtitle: const Text('العربية', style: TextStyle(fontFamily: 'Cairo')),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('سيتم دعم تغيير اللغة قريباً', style: TextStyle(fontFamily: 'Cairo'))),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showAboutDialog(BuildContext context) {
-    showDialog(
+    showAboutDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('حول التطبيق', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo')),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "تم تطوير هذا التطبيق بواسطة المهندس أحمد المدي",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            Text(
-              "البريد الإلكتروني:\nahmedalmdei601@gmail.com",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'Cairo', fontSize: 14),
-            ),
-          ],
+      applicationName: "My Card Project",
+      applicationVersion: "1.0.0",
+      applicationIcon: const Icon(Icons.wifi_tethering, color: primaryColor),
+      children: [
+        const Text(
+          "نظام إدارة وتوزيع كروت الشبكة المحلية للبقالات.",
+          style: TextStyle(fontFamily: 'Cairo'),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("إغلاق", style: TextStyle(fontFamily: 'Cairo')),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }

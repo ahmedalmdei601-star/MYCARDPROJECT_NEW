@@ -237,15 +237,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
-                        if (_passwordStrength <= 0.4)
-                          Align(
-                            alignment: isAr ? Alignment.centerRight : Alignment.centerLeft,
-                            child: Text(
-                              isAr ? 'نصيحة: استخدم أرقاماً ورموزاً وأحرفاً كبيرة' : 'Tip: Use numbers, symbols, and caps',
-                              style: const TextStyle(fontSize: 10, color: Colors.grey, fontFamily: 'Cairo'),
-                            ),
-                          ),
+
                       ],
                     ),
                   ],

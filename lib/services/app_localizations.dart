@@ -15,8 +15,6 @@ class AppLocalizations {
   late Map<String, String> _localizedStrings;
 
   Future<bool> load() async {
-    // For now, we will use a hardcoded map to avoid issues with missing assets in sandbox
-    // In a real app, this would load from JSON files in assets/lang/
     if (locale.languageCode == 'ar') {
       _localizedStrings = {
         "app_title": "تطبيق إدارة الكروت",
@@ -45,7 +43,18 @@ class AppLocalizations {
         "confirm_delete": "تأكيد الحذف",
         "delete_msg": "هل أنت متأكد من الحذف نهائياً؟",
         "delete": "حذف",
-        "add_grocery": "إضافة بقالة"
+        "add_grocery": "إضافة بقالة",
+        "my_store": "متجري",
+        "welcome": "مرحباً",
+        "client_summary": "إليك نظرة سريعة على كروتك وعملياتك",
+        "send_card": "إرسال كرت",
+        "send_card_sub": "بيع كرت لعميل",
+        "my_cards": "كروتي",
+        "my_cards_sub": "الكروت المتاحة في المخزن",
+        "history": "السجل",
+        "history_sub": "سجل عمليات البيع",
+        "settings_sub": "اللغة، المظهر، وكلمة المرور",
+        "store_account": "حساب البقالة"
       };
     } else {
       _localizedStrings = {
@@ -75,7 +84,18 @@ class AppLocalizations {
         "confirm_delete": "Confirm Delete",
         "delete_msg": "Are you sure you want to delete permanently?",
         "delete": "Delete",
-        "add_grocery": "Add Grocery"
+        "add_grocery": "Add Grocery",
+        "my_store": "My Store",
+        "welcome": "Welcome",
+        "client_summary": "Here is a quick look at your cards and operations",
+        "send_card": "Send Card",
+        "send_card_sub": "Sell a card to a customer",
+        "my_cards": "My Cards",
+        "my_cards_sub": "Available cards in stock",
+        "history": "History",
+        "history_sub": "Sales operations history",
+        "settings_sub": "Language, Theme & Password",
+        "store_account": "Store Account"
       };
     }
     return true;
