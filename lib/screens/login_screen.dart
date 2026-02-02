@@ -21,15 +21,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
   bool _rememberMe = false;
 
-  @override
-  void initState() {
-    super.initState();
-    // تصفير حالة الخطأ عند فتح الشاشة لضمان بداية نظيفة
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<UserState>(context, listen: false).clearState();
-    });
-  }
-
   Future<void> login() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -47,6 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
         debugPrint('Login successful: ${user.uid}');
         if (mounted) {
           // تحديث حالة المستخدم يدوياً لضمان الانتقال الفوري عبر RootScreen
+          // RootScreen سيقوم تلقائياً بالتوجيه للوحة المناسبة بمجرد تحديث الحالة
           await Provider.of<UserState>(context, listen: false).refresh();
         }
       } else {

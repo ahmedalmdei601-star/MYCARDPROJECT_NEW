@@ -30,6 +30,10 @@ class UserState extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
+    // إذا كانت هناك جلسة محفوظة، نبقى في حالة التحميل حتى ينتهي Firebase من التحقق
+    _isLoading = isLoggedIn;
+    notifyListeners();
+
     // 2. الاستماع لحالة المصادقة من Firebase
     _auth.authStateChanges().listen((firebaseUser) async {
       if (firebaseUser != null) {
@@ -44,9 +48,11 @@ class UserState extends ChangeNotifier {
           _isLoading = false;
           await prefs.setBool('isLoggedIn', false);
           notifyListeners();
-        } else if (!isLoggedIn) {
-          // إذا لم تكن هناك جلسة محفوظة، نوقف التحميل
+        } else {
+          // إذا لم تكن هناك جلسة في Firebase أثناء التهيئة
+          _user = null;
           _isLoading = false;
+          await prefs.setBool('isLoggedIn', false);
           notifyListeners();
         }
       }

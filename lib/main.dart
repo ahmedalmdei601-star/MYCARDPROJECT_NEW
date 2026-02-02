@@ -102,8 +102,16 @@ class RootScreen extends StatelessWidget {
       );
     }
 
-    // إذا لم يكن مسجلاً أو لا يزال يحمل البيانات، ننتقل لشاشة تسجيل الدخول مباشرة
-    // هذا يزيل شاشة "جاري التحقق من الصلاحيات" العالقة
+    // إذا كان النظام لا يزال في مرحلة التحميل الأولية، نظهر مؤشر تحميل بسيط
+    if (userState.isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: primaryColor),
+        ),
+      );
+    }
+
+    // التوجيه بناءً على حالة المصادقة
     if (!userState.isAuthenticated) {
       return const LoginScreen();
     }
