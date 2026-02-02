@@ -20,47 +20,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool loading = false;
   bool _isPasswordVisible = false;
   bool _rememberMe = false;
-  double _passwordStrength = 0;
-  String _passwordStrengthText = '';
-  Color _passwordStrengthColor = Colors.transparent;
-
-  @override
-  void initState() {
-    super.initState();
-    passwordController.addListener(_checkPasswordStrength);
-  }
-
-  void _checkPasswordStrength() {
-    String password = passwordController.text;
-    double strength = 0;
-    if (password.isEmpty) {
-      strength = 0;
-    } else if (password.length < 6) {
-      strength = 0.2;
-    } else {
-      strength = 0.4;
-      if (password.contains(RegExp(r'[A-Z]'))) strength += 0.2;
-      if (password.contains(RegExp(r'[0-9]'))) strength += 0.2;
-      if (password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) strength += 0.2;
-    }
-
-    setState(() {
-      _passwordStrength = strength;
-      if (strength <= 0.2) {
-        _passwordStrengthText = 'ضعيفة جداً';
-        _passwordStrengthColor = Colors.red;
-      } else if (strength <= 0.4) {
-        _passwordStrengthText = 'ضعيفة';
-        _passwordStrengthColor = Colors.orange;
-      } else if (strength <= 0.7) {
-        _passwordStrengthText = 'متوسطة';
-        _passwordStrengthColor = Colors.blue;
-      } else {
-        _passwordStrengthText = 'قوية جداً';
-        _passwordStrengthColor = Colors.green;
-      }
-    });
-  }
 
   Future<void> login() async {
     if (!_formKey.currentState!.validate()) return;
@@ -111,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo Section
+                  // Logo Section - Professional Router Icon
                   Hero(
                     tag: 'logo',
                     child: Container(
@@ -128,7 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                       child: const Icon(
-                        Icons.router_rounded,
+                        Icons.settings_input_antenna_rounded,
                         size: 80,
                         color: primaryColor,
                       ),
@@ -208,38 +167,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                   ),
                   
-                  // Password Strength Indicator
-                  if (passwordController.text.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: LinearProgressIndicator(
-                                value: _passwordStrength,
-                                backgroundColor: Colors.grey[200],
-                                color: _passwordStrengthColor,
-                                minHeight: 6,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              _passwordStrengthText,
-                              style: TextStyle(
-                                color: _passwordStrengthColor,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Cairo',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-
                   const SizedBox(height: 16),
 
                   // Remember Me & Forgot Password

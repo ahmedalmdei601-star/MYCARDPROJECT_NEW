@@ -56,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.router_rounded,
+                  Icons.settings_input_antenna_rounded,
                   size: 80,
                   color: primaryColor,
                 ),
