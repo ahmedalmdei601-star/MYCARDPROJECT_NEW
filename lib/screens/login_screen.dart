@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../providers/user_state.dart';
+import '../services/app_localizations.dart';
 import '../theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,16 +13,19 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final phoneController = TextEditingController();
+  final identifierController = TextEditingController();
   final passwordController = TextEditingController();
   bool loading = false;
   bool _isPasswordVisible = false;
 
   Future<void> login() async {
-    if (phoneController.text.isEmpty || passwordController.text.isEmpty) {
+    final l = AppLocalizations.of(context);
+    final errorMsg = l != null ? (l.locale.languageCode == 'ar' ? 'الرجاء إدخال اسم المستخدم وكلمة المرور' : 'Please enter username and password') : 'الرجاء إدخال اسم المستخدم وكلمة المرور';
+
+    if (identifierController.text.isEmpty || passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('الرجاء إدخال رقم الهاتف وكلمة المرور'),
+        SnackBar(
+          content: Text(errorMsg),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -30,15 +34,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => loading = true);
     
-    // تصفير الحالة يدوياً قبل محاولة تسجيل دخول جديد
     Provider.of<UserState>(context, listen: false).clearState();
 
     try {
       await AuthService.login(
-        phoneController.text.trim(),
+        identifierController.text.trim(),
         passwordController.text.trim(),
       );
-      // التنقل يتم تلقائياً عبر RootScreen المستمع لحالة UserState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -56,15 +58,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    phoneController.dispose();
+    identifierController.dispose();
     passwordController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final isAr = l?.locale.languageCode == 'ar';
+    
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -72,7 +77,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo or Brand Icon
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -87,24 +91,24 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 30),
                 Text(
-                  'مرحباً بك',
-                  style: Theme.of(context).textTheme.headlineMedium,
+                  isAr ? 'مرحباً بك' : 'Welcome Back',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontFamily: 'Cairo'),
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'قم بتسجيل الدخول لإدارة شبكتك',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  isAr ? 'قم بتسجيل الدخول لإدارة شبكتك' : 'Sign in to manage your network',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontFamily: 'Cairo'),
                 ),
                 const SizedBox(height: 50),
 
-                // Phone Input
+                // Identifier Input (Phone or Email)
                 TextField(
-                  controller: phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'رقم الهاتف',
-                    hintText: 'أدخل رقم الهاتف الخاص بك',
-                    prefixIcon: Icon(Icons.phone_android, color: primaryColor),
+                  controller: identifierController,
+                  keyboardType: TextInputType.emailAddress, // Changed to support @ and dots
+                  decoration: InputDecoration(
+                    labelText: isAr ? 'رقم الهاتف أو البريد' : 'Phone or Email',
+                    hintText: isAr ? 'أدخل بيانات الدخول الخاصة بك' : 'Enter your login details',
+                    prefixIcon: const Icon(Icons.person_outline, color: primaryColor),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -114,8 +118,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: passwordController,
                   obscureText: !_isPasswordVisible,
                   decoration: InputDecoration(
-                    labelText: 'كلمة المرور',
-                    hintText: 'أدخل كلمة المرور',
+                    labelText: isAr ? 'كلمة المرور' : 'Password',
+                    hintText: isAr ? 'أدخل كلمة المرور' : 'Enter your password',
                     prefixIcon: const Icon(Icons.lock_outline, color: primaryColor),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -146,14 +150,15 @@ class _LoginScreenState extends State<LoginScreen> {
                               strokeWidth: 2,
                             ),
                           )
-                        : const Text('تسجيل الدخول'),
+                        : Text(isAr ? 'تسجيل الدخول' : 'Login'),
                   ),
                 ),
                 const SizedBox(height: 40),
                 
-                const Text(
-                  'نظام إدارة الشبكات المحلية للبقالات',
-                  style: TextStyle(
+                Text(
+                  isAr ? 'نظام إدارة الشبكات المحلية للبقالات' : 'Local Grocery Network Management System',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
                     color: Colors.grey,
                     fontSize: 12,
                     fontFamily: 'Cairo',
