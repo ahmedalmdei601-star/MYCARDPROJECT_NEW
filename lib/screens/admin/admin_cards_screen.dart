@@ -51,6 +51,10 @@ class _AdminCardsScreenState extends State<AdminCardsScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
+                if (snapshot.hasError) {
+                  return Center(child: Text("Error: ${snapshot.error}"));
+                }
+
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Center(
                     child: Text(
@@ -65,8 +69,9 @@ class _AdminCardsScreenState extends State<AdminCardsScreen> {
                 // Group by Provider and Value
                 Map<String, Map<String, dynamic>> stats = {};
                 for (var doc in docs) {
-                  String provider = doc['provider'] ?? 'Unknown';
-                  int value = doc['value'] ?? 0;
+                  final data = doc.data() as Map<String, dynamic>;
+                  String provider = data['provider'] ?? 'Unknown';
+                  int value = data['value'] ?? 0;
                   String key = '$provider-$value';
                   
                   if (!stats.containsKey(key)) {
@@ -138,9 +143,9 @@ class _AdminCardsScreenState extends State<AdminCardsScreen> {
   }
 
   Stream<QuerySnapshot> _getFilteredStream() {
-    var query = FirebaseFirestore.instance.collection('cards');
+    Query query = FirebaseFirestore.instance.collection('cards');
     if (_selectedStatus != 'all') {
-      query = query.where('status', isEqualTo: _selectedStatus) as CollectionReference<Map<String, dynamic>>;
+      query = query.where('status', isEqualTo: _selectedStatus);
     }
     return query.snapshots();
   }

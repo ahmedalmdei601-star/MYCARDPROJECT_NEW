@@ -40,11 +40,12 @@ class ReportsScreen extends StatelessWidget {
   }
 
   Widget _buildDistributionList(bool isAr) {
+    // We remove the .orderBy('distributedAt') to avoid the need for a composite index
+    // and instead sort the list in memory if needed, or just rely on status filter.
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('cards')
           .where('status', isEqualTo: 'distributed')
-          .orderBy('distributedAt', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
@@ -69,11 +70,21 @@ class ReportsScreen extends StatelessWidget {
           );
         }
 
+        // Sort in memory to avoid Firebase Index requirement
+        final sortedDocs = List.from(docs);
+        sortedDocs.sort((a, b) {
+          final aTime = (a.data() as Map<String, dynamic>)['distributedAt'] as Timestamp?;
+          final bTime = (b.data() as Map<String, dynamic>)['distributedAt'] as Timestamp?;
+          if (aTime == null || bTime == null) return 0;
+          return bTime.compareTo(aTime); // Descending
+        });
+
         return ListView.builder(
           padding: const EdgeInsets.all(20),
-          itemCount: docs.length,
+          itemCount: sortedDocs.length,
           itemBuilder: (context, index) {
-            final data = docs[index].data() as Map<String, dynamic>;
+            final doc = sortedDocs[index];
+            final data = doc.data() as Map<String, dynamic>;
             final date = (data['distributedAt'] as Timestamp?)?.toDate() ?? DateTime.now();
             
             return FutureBuilder<DocumentSnapshot>(
@@ -81,7 +92,8 @@ class ReportsScreen extends StatelessWidget {
               builder: (context, userSnap) {
                 String clientName = isAr ? 'تحميل...' : 'Loading...';
                 if (userSnap.hasData && userSnap.data!.exists) {
-                  clientName = userSnap.data!['name'] ?? 'Unknown';
+                  final userData = userSnap.data!.data() as Map<String, dynamic>;
+                  clientName = userData['name'] ?? 'Unknown';
                 }
 
                 return Card(
@@ -137,9 +149,9 @@ class ReportsScreen extends StatelessWidget {
         }
 
         final docs = snapshot.data!.docs;
-        int available = docs.where((d) => d['status'] == 'available').length;
-        int distributed = docs.where((d) => d['status'] == 'distributed').length;
-        int used = docs.where((d) => d['status'] == 'used').length;
+        int available = docs.where((d) => (d.data() as Map<String, dynamic>)['status'] == 'available').length;
+        int distributed = docs.where((d) => (d.data() as Map<String, dynamic>)['status'] == 'distributed').length;
+        int used = docs.where((d) => (d.data() as Map<String, dynamic>)['status'] == 'used').length;
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(24),
