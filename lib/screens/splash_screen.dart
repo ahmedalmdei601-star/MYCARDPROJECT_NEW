@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
+import 'package:provider/provider.dart';
 import '../main.dart'; // Import to access RootScreen
 import '../theme.dart';
+import '../providers/user_state.dart'; // Import UserState
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,7 +14,7 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
-
+  
   @override
   void initState() {
     super.initState();
@@ -24,20 +25,28 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
     _controller.forward();
 
-    Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        // الانتقال إلى RootScreen بدلاً من LoginScreen مباشرة
-        // لكي يتم فحص حالة المستخدم (هل هو مسجل دخول أم لا)
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const RootScreen()),
-        );
-      }
+    // Listen to UserState changes to determine when to navigate
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<UserState>(context, listen: false).addListener(_handleUserStateChange);
     });
+  }
+
+  void _handleUserStateChange() {
+    final userState = Provider.of<UserState>(context, listen: false);
+    if (!userState.isLoading && mounted) {
+      // UserState has finished loading, navigate to RootScreen
+      userState.removeListener(_handleUserStateChange);
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const RootScreen()),
+      );
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    // Ensure listener is removed to prevent memory leaks
+    Provider.of<UserState>(context, listen: false).removeListener(_handleUserStateChange);
     super.dispose();
   }
 

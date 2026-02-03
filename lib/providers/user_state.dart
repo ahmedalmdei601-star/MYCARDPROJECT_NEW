@@ -11,7 +11,6 @@ class UserState extends ChangeNotifier {
   UserModel? _user;
   bool _isLoading = true; 
   String? _errorMessage;
-  bool _initializingAuth = true; // Added to track initial auth state check
 
   UserModel? get user => _user;
   bool get isLoading => _isLoading;
@@ -26,34 +25,37 @@ class UserState extends ChangeNotifier {
   }
 
   Future<void> _init() async {
-    final prefs = await SharedPreferences.getInstance();
-    final bool isLoggedInLocally = prefs.getBool('isLoggedIn') ?? false;
+    _isLoading = true;
+    notifyListeners();
 
+    // Listen for Firebase Auth state changes
     _auth.authStateChanges().listen((firebaseUser) async {
       if (firebaseUser != null) {
+        // If Firebase indicates a user is logged in, load their data
         await _loadUser(firebaseUser.uid);
-        await prefs.setBool('isLoggedIn', true);
       } else {
+        // If Firebase indicates no user, ensure local state is cleared
         _user = null;
         _errorMessage = null;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.clear(); // Clear all preferences to ensure a clean state
         _isLoading = false;
-        await prefs.setBool('isLoggedIn', false);
         notifyListeners();
       }
-      _initializingAuth = false; // Auth state check is complete
     });
 
-    // If Firebase auth state changes listener hasn't completed and no local session,
-    // ensure isLoading is set to false after a short delay to prevent indefinite loading.
-    // This handles cases where Firebase might not trigger authStateChanges immediately for unauthenticated users.
-    if (_initializingAuth && !isLoggedInLocally) {
-      Future.delayed(const Duration(seconds: 1), () {
-        if (_initializingAuth) {
-          _isLoading = false;
-          notifyListeners();
-          _initializingAuth = false;
-        }
-      });
+    // Perform an immediate check for the current user to handle app startup
+    final currentUser = _auth.currentUser;
+    if (currentUser != null) {
+      await _loadUser(currentUser.uid);
+    } else {
+      // If no current Firebase user, ensure state is set to unauthenticated
+      _user = null;
+      _errorMessage = null;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear(); // Clear all preferences for a clean start if no Firebase user
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
