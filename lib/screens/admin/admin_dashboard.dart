@@ -259,6 +259,16 @@ class AdminDashboard extends StatelessWidget {
                 ),
                 _buildDrawerItem(
                   context,
+                  icon: Icons.info_outline,
+                  title: l.translate('about_us'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showAboutDialog(context);
+                  },
+                ),
+                const Divider(),
+                _buildDrawerItem(
+                  context,
                   icon: Icons.logout_rounded,
                   title: l.translate('logout'),
                   color: Colors.red,
@@ -269,6 +279,48 @@ class AdminDashboard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showAboutDialog(
+      context: context,
+      applicationName: "My Card Project",
+      applicationVersion: "1.0.0",
+      applicationIcon: const Icon(Icons.wifi_tethering, color: primaryColor),
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(top: 10),
+          child: Text(
+            "نظام إدارة وتوزيع كروت الشبكة المحلية للبقالات.",
+            style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: primaryColor),
+          ),
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          "يهدف هذا التطبيق إلى تسهيل وتنظيم عملية توزيع كروت الشبكة المحلية لأصحاب البقالات والمحلات التجارية، حيث يوفر منصة متكاملة لإدارة المخزون، وتتبع المبيعات، وتوزيع الكروت للعملاء بكل سهولة وأمان. يسعى النظام إلى أتمتة العمليات اليدوية وتقليل الأخطاء وضمان وصول الخدمة للمستخدمين بكفاءة عالية.",
+          style: TextStyle(fontFamily: 'Cairo', fontSize: 14),
+          textAlign: TextAlign.justify,
+        ),
+        const SizedBox(height: 16),
+        const Divider(),
+        const SizedBox(height: 8),
+        const Text(
+          "تم تطوير هذا التطبيق بواسطة المهندس أحمد المدي ومجموعة من المهندسين الآخرين.",
+          style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            const Icon(Icons.email_outlined, size: 16, color: primaryColor),
+            const SizedBox(width: 8),
+            const Text(
+              "ahmedalmdei@gmail.com",
+              style: TextStyle(fontSize: 13, color: Colors.blue),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
