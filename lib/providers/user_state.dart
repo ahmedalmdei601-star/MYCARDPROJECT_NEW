@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,57 +29,81 @@ class UserState extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    // Listen for Firebase Auth state changes
-    _auth.authStateChanges().listen((firebaseUser) async {
-      if (firebaseUser != null) {
-        // If Firebase indicates a user is logged in, load their data
-        await _loadUser(firebaseUser.uid);
-      } else {
-        // If Firebase indicates no user, ensure local state is cleared
-        _user = null;
-        _errorMessage = null;
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.clear(); // Clear all preferences to ensure a clean state
+    // 1. Try to load saved user from SharedPreferences for immediate access
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedUserJson = prefs.getString('saved_user');
+      if (savedUserJson != null) {
+        _user = UserModel.fromJson(jsonDecode(savedUserJson));
         _isLoading = false;
         notifyListeners();
       }
+    } catch (e) {
+      debugPrint('Error loading saved user: $e');
+    }
+
+    // 2. Listen for Firebase Auth state changes to sync with server
+    _auth.authStateChanges().listen((firebaseUser) async {
+      if (firebaseUser != null) {
+        // If Firebase indicates a user is logged in, refresh their data from Firestore
+        await _loadUser(firebaseUser.uid);
+      } else {
+        // If Firebase indicates no user, clear local state and storage
+        await _clearLocalSession();
+      }
     });
 
-    // Perform an immediate check for the current user to handle app startup
+    // 3. Perform an immediate check for the current user to handle app startup
     final currentUser = _auth.currentUser;
     if (currentUser != null) {
       await _loadUser(currentUser.uid);
     } else {
-      // If no current Firebase user, ensure state is set to unauthenticated
-      _user = null;
-      _errorMessage = null;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear(); // Clear all preferences for a clean start if no Firebase user
-      _isLoading = false;
-      notifyListeners();
+      if (_user == null) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
-  Future<void> _loadUser(String uid) async {
-    _isLoading = true;
+  Future<void> _clearLocalSession() async {
+    _user = null;
     _errorMessage = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('saved_user');
+    await prefs.remove('isLoggedIn');
+    _isLoading = false;
     notifyListeners();
+  }
+
+  Future<void> _loadUser(String uid) async {
+    // Only set loading to true if we don't already have a user (from local storage)
+    if (_user == null) {
+      _isLoading = true;
+      notifyListeners();
+    }
+    
+    _errorMessage = null;
 
     try {
       final userData = await _userService.getUser(uid);
       
       if (userData != null && (userData.role == 'admin' || userData.role == 'client')) {
         _user = userData;
+        // Save to local storage for next time
         final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('saved_user', jsonEncode(userData.toJson()));
         await prefs.setBool('isLoggedIn', true);
       } else {
         _user = null;
         _errorMessage = 'صلاحيات المستخدم غير معرفة في النظام.';
+        await _clearLocalSession();
       }
     } catch (e) {
       debugPrint('Error loading user data from Firestore: $e');
-      _user = null;
-      _errorMessage = 'فشل جلب بيانات الصلاحيات من الخادم.';
+      // If we already have a user from local storage, don't clear it on network error
+      if (_user == null) {
+        _errorMessage = 'فشل جلب بيانات الصلاحيات من الخادم.';
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -91,13 +116,7 @@ class UserState extends ChangeNotifier {
       notifyListeners();
       
       await _auth.signOut();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear(); // Clear all shared preferences on logout
-      
-      _user = null;
-      _errorMessage = null;
-      _isLoading = false;
-      notifyListeners();
+      await _clearLocalSession();
     } catch (e) {
       debugPrint('Error during sign out: $e');
       _isLoading = false;

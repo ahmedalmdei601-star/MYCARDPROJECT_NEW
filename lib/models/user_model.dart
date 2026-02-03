@@ -37,4 +37,27 @@ class UserModel {
       'lastLogin': lastLogin != null ? Timestamp.fromDate(lastLogin!) : null,
     };
   }
+
+  // For local storage persistence
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'phone': phone,
+      'role': role,
+      'createdAt': createdAt.toIso8601String(),
+      'lastLogin': lastLogin?.toIso8601String(),
+    };
+  }
+
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      id: json['id'],
+      name: json['name'],
+      phone: json['phone'],
+      role: json['role'],
+      createdAt: DateTime.parse(json['createdAt']),
+      lastLogin: json['lastLogin'] != null ? DateTime.parse(json['lastLogin']) : null,
+    );
+  }
 }
