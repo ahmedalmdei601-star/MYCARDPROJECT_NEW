@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
-// الألوان الرسمية للهوية البصرية الجديدة (Green Brand Style)
-const Color primaryColor = Color(0xFF2E7D32); // Green (اللون الأساسي)
-const Color secondaryColor = Color(0xFF4CAF50); // Light Green
-const Color accentColor = Color(0xFF81C784); // Accent Green
-const Color backgroundColor = Color(0xFFF8FAF9); // Off-White (خلفية فاتحة جداً)
+// NETORA visual identity: deep navy with a vivid network blue.
+const Color darkNavyColor = Color(0xFF102A43);
+const Color vibrantBlueColor = Color(0xFF1677FF);
+const Color primaryColor = Color(0xFF0B5ED7);
+const Color secondaryColor = Color(0xFF1677FF);
+const Color accentColor = Color(0xFF6EA8FE);
+const Color backgroundColor = Color(0xFFF5F8FC);
 const Color errorColor = Color(0xFFD32F2F); // Red
 const Color cardColor = Colors.white;
 

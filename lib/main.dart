@@ -44,7 +44,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
     return MaterialApp(
-      title: 'مدير الشبكات المحلية',
+      title: 'NETORA - Network Management App',
       debugShowCheckedModeBanner: false,
       theme: appTheme,
       darkTheme: darkAppTheme,
