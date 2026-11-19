@@ -364,7 +364,7 @@ class ClientDashboard extends StatelessWidget {
             const Icon(Icons.email_outlined, size: 16, color: primaryColor),
             const SizedBox(width: 8),
             const Text(
-              "ahmedalmdei@gmail.com",
+              "ahmedalmdei601@gmail.com",
               style: TextStyle(fontSize: 13, color: Colors.blue),
             ),
           ],
