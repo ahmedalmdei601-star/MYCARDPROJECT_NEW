@@ -371,6 +371,8 @@ class _HeroPainter extends CustomPainter {
 }
 
 class _RouterScenePainter extends CustomPainter {
+  const _RouterScenePainter();
+
   @override
   void paint(Canvas canvas, Size size) {
     final globeCenter = Offset(size.width * 0.47, size.height * 0.39);
@@ -387,7 +389,7 @@ class _RouterScenePainter extends CustomPainter {
       final node = Offset(globeCenter.dx + math.cos(angle) * radius * 0.9, globeCenter.dy + math.sin(angle) * radius * 0.9);
       nodes.add(node);
       canvas.drawCircle(node, 2.4, nodePaint);
-      if (i > 0) canvas.drawLine(node, nodes[i - 1], Paint()..color = nodePaint.withOpacity(0.42)..strokeWidth = 0.8);
+      if (i > 0) canvas.drawLine(node, nodes[i - 1], Paint()..color = nodePaint.color.withOpacity(0.42)..strokeWidth = 0.8);
     }
 
     final wifi = Paint()..color = Colors.white.withOpacity(0.9)..style = PaintingStyle.stroke..strokeWidth = 5..strokeCap = StrokeCap.round;
