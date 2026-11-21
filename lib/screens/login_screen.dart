@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/user_state.dart';
-import '../services/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../theme.dart';
 import 'account_type_selection_screen.dart';
@@ -22,25 +21,23 @@ class _LoginScreenState extends State<LoginScreen> {
   final passwordController = TextEditingController();
 
   bool loading = false;
-  bool _isPasswordVisible = false;
+  bool passwordVisible = false;
 
   Future<void> login() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => loading = true);
     try {
       final user = await AuthService.login(
         identifierController.text.trim(),
         passwordController.text.trim(),
       );
-
       if (user == null) throw Exception('بيانات الدخول غير صحيحة.');
       if (mounted) await Provider.of<UserState>(context, listen: false).refresh();
-    } catch (e) {
+    } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceAll('Exception: ', ''), style: const TextStyle(fontFamily: 'Cairo')),
+          content: Text(error.toString().replaceAll('Exception: ', ''), style: const TextStyle(fontFamily: 'Cairo')),
           backgroundColor: errorColor,
           behavior: SnackBarBehavior.floating,
         ),
@@ -50,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _showRecoveryNotice() {
+  void showRecoveryNotice() {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
@@ -82,133 +79,35 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isAr = AppLocalizations.of(context)?.locale.languageCode != 'en';
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      const _NetoraHeroHeader(),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-                        child: Column(
-                          children: [
-                            const Text(
-                              'مرحباً بعودتك',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontFamily: 'Cairo', fontSize: 31, fontWeight: FontWeight.w800, color: primaryColor, height: 1.2),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'سجل الدخول للوصول إلى حسابك',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontFamily: 'Cairo', fontSize: 19, color: Color(0xFF53658D), height: 1.3),
-                            ),
-                            const SizedBox(height: 26),
-                            _buildField(
-                              controller: identifierController,
-                              label: isAr ? 'رقم الهاتف' : 'Phone number',
-                              icon: Icons.phone_android_rounded,
-                              keyboardType: TextInputType.phone,
-                              validator: (value) => value == null || value.trim().isEmpty
-                                  ? (isAr ? 'يرجى إدخال رقم الهاتف' : 'Enter your phone number')
-                                  : null,
-                            ),
-                            const SizedBox(height: 14),
-                            _buildField(
-                              controller: passwordController,
-                              label: isAr ? 'كلمة المرور' : 'Password',
-                              icon: Icons.lock_rounded,
-                              obscureText: !_isPasswordVisible,
-                              suffixIcon: IconButton(
-                                tooltip: _isPasswordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور',
-                                icon: Icon(
-                                  _isPasswordVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
-                                  color: const Color(0xFF65739A),
-                                  size: 28,
-                                ),
-                                onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
-                              ),
-                              validator: (value) => value == null || value.isEmpty
-                                  ? (isAr ? 'يرجى إدخال كلمة المرور' : 'Enter your password')
-                                  : null,
-                            ),
-                            Align(
-                              alignment: AlignmentDirectional.centerEnd,
-                              child: TextButton(
-                                onPressed: _showRecoveryNotice,
-                                child: const Text(
-                                  'هل نسيت كلمة المرور؟',
-                                  style: TextStyle(fontFamily: 'Cairo', fontSize: 17, fontWeight: FontWeight.bold, color: primaryColor),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 64,
-                              child: ElevatedButton.icon(
-                                onPressed: loading ? null : login,
-                                icon: loading
-                                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                    : const Icon(Icons.login_rounded, size: 30),
-                                label: Text(
-                                  'تسجيل الدخول',
-                                  style: const TextStyle(fontFamily: 'Cairo', fontSize: 22, fontWeight: FontWeight.bold),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColor,
-                                  foregroundColor: Colors.white,
-                                  elevation: 5,
-                                  shadowColor: primaryColor.withOpacity(0.35),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-                            Row(
-                              children: [
-                                Expanded(child: Divider(color: primaryColor.withOpacity(0.25), thickness: 1.5)),
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 14),
-                                  child: Text('ليس لديك حساب؟', style: TextStyle(fontFamily: 'Cairo', fontSize: 17, color: Color(0xFF53658D))),
-                                ),
-                                Expanded(child: Divider(color: primaryColor.withOpacity(0.25), thickness: 1.5)),
-                              ],
-                            ),
-                            TextButton.icon(
-                              onPressed: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const AccountTypeSelectionScreen()),
-                              ),
-                              icon: const Icon(Icons.person_add_alt_1_rounded, size: 29),
-                              label: const Text(
-                                'إنشاء حساب جديد',
-                                style: TextStyle(fontFamily: 'Cairo', fontSize: 21, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.verified_user_rounded, color: primaryColor, size: 26),
-                                SizedBox(width: 8),
-                                Text('إدارة شبكتك بكل سهولة وأمان', style: TextStyle(fontFamily: 'Cairo', fontSize: 15, color: Color(0xFF65739A))),
-                              ],
-                            ),
-                          ],
+              padding: EdgeInsets.zero,
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    const _ReferenceHero(),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(22, 14, 22, 24),
+                      child: _LoginContent(
+                        identifierController: identifierController,
+                        passwordController: passwordController,
+                        passwordVisible: passwordVisible,
+                        loading: loading,
+                        onPasswordVisibilityChanged: () => setState(() => passwordVisible = !passwordVisible),
+                        onForgotPassword: showRecoveryNotice,
+                        onLogin: login,
+                        onCreateAccount: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AccountTypeSelectionScreen()),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -217,16 +116,142 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+}
 
-  Widget _buildField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    required String? Function(String?) validator,
-    TextInputType? keyboardType,
-    bool obscureText = false,
-    Widget? suffixIcon,
-  }) {
+class _LoginContent extends StatelessWidget {
+  final TextEditingController identifierController;
+  final TextEditingController passwordController;
+  final bool passwordVisible;
+  final bool loading;
+  final VoidCallback onPasswordVisibilityChanged;
+  final VoidCallback onForgotPassword;
+  final VoidCallback onLogin;
+  final VoidCallback onCreateAccount;
+
+  const _LoginContent({
+    required this.identifierController,
+    required this.passwordController,
+    required this.passwordVisible,
+    required this.loading,
+    required this.onPasswordVisibilityChanged,
+    required this.onForgotPassword,
+    required this.onLogin,
+    required this.onCreateAccount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const Text(
+          'مرحباً بعودتك',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontFamily: 'Cairo', fontSize: 31, height: 1.15, fontWeight: FontWeight.w800, color: primaryColor),
+        ),
+        const SizedBox(height: 7),
+        const Text(
+          'سجل الدخول للوصول إلى حسابك',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontFamily: 'Cairo', fontSize: 19, height: 1.3, color: Color(0xFF53658D)),
+        ),
+        const SizedBox(height: 24),
+        _ReferenceField(
+          controller: identifierController,
+          label: 'رقم الهاتف',
+          icon: Icons.phone_android_rounded,
+          keyboardType: TextInputType.phone,
+          validator: (value) => value == null || value.trim().isEmpty ? 'يرجى إدخال رقم الهاتف' : null,
+        ),
+        const SizedBox(height: 13),
+        _ReferenceField(
+          controller: passwordController,
+          label: 'كلمة المرور',
+          icon: Icons.lock_rounded,
+          obscureText: !passwordVisible,
+          suffixIcon: IconButton(
+            tooltip: passwordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور',
+            icon: Icon(passwordVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded, size: 29, color: const Color(0xFF65739A)),
+            onPressed: onPasswordVisibilityChanged,
+          ),
+          validator: (value) => value == null || value.isEmpty ? 'يرجى إدخال كلمة المرور' : null,
+        ),
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: TextButton(
+            onPressed: onForgotPassword,
+            child: const Text('هل نسيت كلمة المرور؟', style: TextStyle(fontFamily: 'Cairo', fontSize: 17, fontWeight: FontWeight.bold, color: primaryColor)),
+          ),
+        ),
+        const SizedBox(height: 5),
+        SizedBox(
+          width: double.infinity,
+          height: 64,
+          child: ElevatedButton.icon(
+            onPressed: loading ? null : onLogin,
+            icon: loading
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.login_rounded, size: 31),
+            label: const Text('تسجيل الدخول', style: TextStyle(fontFamily: 'Cairo', fontSize: 22, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.white,
+              elevation: 5,
+              shadowColor: primaryColor.withOpacity(0.35),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(34)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 19),
+        Row(
+          children: [
+            Expanded(child: Divider(color: const Color(0xFFB7C9E8), thickness: 1.3)),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Text('ليس لديك حساب؟', style: TextStyle(fontFamily: 'Cairo', fontSize: 17, color: Color(0xFF53658D))),
+            ),
+            Expanded(child: Divider(color: const Color(0xFFB7C9E8), thickness: 1.3)),
+          ],
+        ),
+        TextButton.icon(
+          onPressed: onCreateAccount,
+          icon: const Icon(Icons.person_add_alt_1_rounded, size: 29, color: primaryColor),
+          label: const Text('إنشاء حساب جديد', style: TextStyle(fontFamily: 'Cairo', fontSize: 21, fontWeight: FontWeight.bold, color: primaryColor)),
+        ),
+        const SizedBox(height: 19),
+        const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.verified_user_rounded, color: primaryColor, size: 26),
+            SizedBox(width: 8),
+            Text('إدارة شبكتك بكل سهولة وأمان', style: TextStyle(fontFamily: 'Cairo', fontSize: 15, color: Color(0xFF65739A))),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _ReferenceField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final IconData icon;
+  final TextInputType? keyboardType;
+  final bool obscureText;
+  final Widget? suffixIcon;
+  final String? Function(String?) validator;
+
+  const _ReferenceField({
+    required this.controller,
+    required this.label,
+    required this.icon,
+    required this.validator,
+    this.keyboardType,
+    this.obscureText = false,
+    this.suffixIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -241,7 +266,7 @@ class _LoginScreenState extends State<LoginScreen> {
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: const Color(0xFFF1F6FF),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 19, vertical: 18),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(22),
           borderSide: const BorderSide(color: Color(0xFFC5D5EF), width: 1.4),
@@ -260,26 +285,23 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-class _NetoraHeroHeader extends StatelessWidget {
-  const _NetoraHeroHeader();
+class _ReferenceHero extends StatelessWidget {
+  const _ReferenceHero();
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 294,
-      width: double.infinity,
+    return AspectRatio(
+      aspectRatio: 2.1,
       child: ClipPath(
-        clipper: _HeroWaveClipper(),
+        clipper: _HeroClipper(),
         child: CustomPaint(
-          painter: _HeroNetworkPainter(),
+          painter: _HeroPainter(),
           child: const Padding(
-            padding: EdgeInsets.fromLTRB(24, 20, 24, 48),
+            padding: EdgeInsets.fromLTRB(20, 16, 22, 28),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Expanded(child: _RouterIllustration()),
-                SizedBox(width: 10),
-                Expanded(child: _BrandLockup()),
+                Expanded(flex: 11, child: _RouterScene()),
+                Expanded(flex: 10, child: _NetoraBrand()),
               ],
             ),
           ),
@@ -289,166 +311,129 @@ class _NetoraHeroHeader extends StatelessWidget {
   }
 }
 
-class _BrandLockup extends StatelessWidget {
-  const _BrandLockup();
+class _NetoraBrand extends StatelessWidget {
+  const _NetoraBrand();
 
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(
-          width: 82,
-          height: 68,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            color: Colors.white.withOpacity(0.14),
-            border: Border.all(color: Colors.white.withOpacity(0.35)),
-          ),
-          child: const _NetworkLogoMark(),
+        const _NetworkLogo(size: 76),
+        const SizedBox(height: 5),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: const Text('NETORA', style: TextStyle(color: Colors.white, fontSize: 35, fontWeight: FontWeight.w900, letterSpacing: 1.1)),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 2),
         const FittedBox(
           fit: BoxFit.scaleDown,
-          child: Text('NETORA', style: TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-        ),
-        const SizedBox(height: 3),
-        const FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text('Network Management App', style: TextStyle(color: Colors.white, fontSize: 13, letterSpacing: 0.4)),
+          child: Text('Network Management App', style: TextStyle(color: Colors.white, fontSize: 13, letterSpacing: 0.2)),
         ),
       ],
     );
   }
 }
 
-class _RouterIllustration extends StatelessWidget {
-  const _RouterIllustration();
+class _NetworkLogo extends StatelessWidget {
+  final double size;
+  const _NetworkLogo({required this.size});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 180,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned(top: 12, child: Icon(Icons.wifi_rounded, color: Colors.white.withOpacity(0.9), size: 70)),
-          Positioned(
-            bottom: 24,
-            child: Container(
-              width: 150,
-              height: 62,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF102A43), Color(0xFF1D4E89)]),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 8))],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(4, (_) => Container(
-                  width: 9,
-                  height: 9,
-                  margin: const EdgeInsets.symmetric(horizontal: 5),
-                  decoration: const BoxDecoration(color: Color(0xFF6EA8FE), shape: BoxShape.circle),
-                )),
-              ),
-            ),
-          ),
-          Positioned(bottom: 78, left: 36, child: Container(width: 5, height: 58, color: const Color(0xFF102A43))),
-          Positioned(bottom: 78, right: 36, child: Container(width: 5, height: 58, color: const Color(0xFF102A43))),
-        ],
-      ),
-    );
+    return SizedBox(width: size, height: size * 0.82, child: CustomPaint(painter: _LogoPainter(), child: const Center(child: Text('N', style: TextStyle(color: Colors.white, fontSize: 43, fontWeight: FontWeight.w900)))));
   }
 }
 
-class _NetworkLogoMark extends StatelessWidget {
-  const _NetworkLogoMark();
+class _RouterScene extends StatelessWidget {
+  const _RouterScene();
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _NetworkLogoPainter(),
-      child: const Center(child: Text('N', style: TextStyle(color: Colors.white, fontSize: 42, fontWeight: FontWeight.w900, height: 1))),
-    );
+    return const CustomPaint(painter: _RouterScenePainter(), child: SizedBox.expand());
   }
 }
 
-class _NetworkLogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final linePaint = Paint()
-      ..color = Colors.white.withOpacity(0.65)
-      ..strokeWidth = 1.4
-      ..style = PaintingStyle.stroke;
-    final nodePaint = Paint()..color = Colors.white;
-    final nodes = <Offset>[
-      Offset(size.width * 0.16, size.height * 0.2),
-      Offset(size.width * 0.84, size.height * 0.25),
-      Offset(size.width * 0.78, size.height * 0.8),
-      Offset(size.width * 0.18, size.height * 0.75),
-    ];
-    for (var i = 0; i < nodes.length; i++) {
-      canvas.drawLine(nodes[i], nodes[(i + 1) % nodes.length], linePaint);
-      canvas.drawCircle(nodes[i], 3.5, nodePaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _HeroNetworkPainter extends CustomPainter {
+class _HeroPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    final gradient = const LinearGradient(
-      colors: [Color(0xFF0B5ED7), Color(0xFF064A9B), Color(0xFF102A43)],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
-    canvas.drawRect(rect, Paint()..shader = gradient.createShader(rect));
-
-    final glowPaint = Paint()..color = const Color(0xFF51B6FF).withOpacity(0.22);
-    canvas.drawCircle(Offset(size.width * 0.2, size.height * 0.2), size.height * 0.55, glowPaint);
-
-    final globeCenter = Offset(size.width * 0.24, size.height * 0.33);
-    final globeRadius = size.height * 0.25;
-    final globePaint = Paint()
-      ..color = Colors.white.withOpacity(0.22)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    canvas.drawCircle(globeCenter, globeRadius, globePaint);
-    canvas.drawOval(Rect.fromCenter(center: globeCenter, width: globeRadius * 0.95, height: globeRadius * 2), globePaint);
-    canvas.drawOval(Rect.fromCenter(center: globeCenter, width: globeRadius * 2, height: globeRadius * 0.72), globePaint);
-
-    final nodePaint = Paint()..color = const Color(0xFF83D7FF);
-    for (var i = 0; i < 8; i++) {
-      final angle = i * math.pi / 4;
-      final node = Offset(globeCenter.dx + math.cos(angle) * globeRadius, globeCenter.dy + math.sin(angle) * globeRadius);
-      canvas.drawCircle(node, 2.5, nodePaint);
-    }
-
-    final wavePaint = Paint()
-      ..color = Colors.white.withOpacity(0.16)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    final path = Path()..moveTo(0, size.height * 0.77);
-    path.cubicTo(size.width * 0.24, size.height * 0.67, size.width * 0.48, size.height * 0.9, size.width * 0.72, size.height * 0.75);
-    path.cubicTo(size.width * 0.85, size.height * 0.67, size.width * 0.94, size.height * 0.75, size.width, size.height * 0.67);
-    canvas.drawPath(path, wavePaint);
+    canvas.drawRect(rect, Paint()..shader = const LinearGradient(colors: [Color(0xFF086FEA), Color(0xFF06499C), Color(0xFF103875)], begin: Alignment.topLeft, end: Alignment.bottomRight).createShader(rect));
+    final glow = Paint()..color = const Color(0xFF54C6FF).withOpacity(0.24);
+    canvas.drawCircle(Offset(size.width * 0.2, size.height * 0.3), size.height * 0.7, glow);
+    final wave = Paint()..color = Colors.white.withOpacity(0.18)..style = PaintingStyle.stroke..strokeWidth = 1.4;
+    final path = Path()..moveTo(0, size.height * 0.78)..cubicTo(size.width * 0.22, size.height * 0.62, size.width * 0.46, size.height * 0.94, size.width * 0.72, size.height * 0.76)..cubicTo(size.width * 0.88, size.height * 0.65, size.width * 0.95, size.height * 0.74, size.width, size.height * 0.58);
+    canvas.drawPath(path, wave);
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _HeroWaveClipper extends CustomClipper<Path> {
+class _RouterScenePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final globeCenter = Offset(size.width * 0.47, size.height * 0.39);
+    final radius = size.height * 0.31;
+    final globePaint = Paint()..color = Colors.white.withOpacity(0.28)..style = PaintingStyle.stroke..strokeWidth = 1;
+    canvas.drawCircle(globeCenter, radius, globePaint);
+    canvas.drawOval(Rect.fromCenter(center: globeCenter, width: radius * 0.9, height: radius * 2), globePaint);
+    canvas.drawOval(Rect.fromCenter(center: globeCenter, width: radius * 2, height: radius * 0.65), globePaint);
+
+    final nodePaint = Paint()..color = const Color(0xFF75D8FF);
+    final nodes = <Offset>[];
+    for (var i = 0; i < 10; i++) {
+      final angle = i * math.pi * 0.43;
+      final node = Offset(globeCenter.dx + math.cos(angle) * radius * 0.9, globeCenter.dy + math.sin(angle) * radius * 0.9);
+      nodes.add(node);
+      canvas.drawCircle(node, 2.4, nodePaint);
+      if (i > 0) canvas.drawLine(node, nodes[i - 1], Paint()..color = nodePaint.withOpacity(0.42)..strokeWidth = 0.8);
+    }
+
+    final wifi = Paint()..color = Colors.white.withOpacity(0.9)..style = PaintingStyle.stroke..strokeWidth = 5..strokeCap = StrokeCap.round;
+    for (var i = 0; i < 3; i++) {
+      final rect = Rect.fromCenter(center: Offset(size.width * 0.25, size.height * 0.3), width: 42 + i * 22, height: 42 + i * 22);
+      canvas.drawArc(rect, math.pi * 1.18, math.pi * 0.64, false, wifi);
+    }
+    canvas.drawCircle(Offset(size.width * 0.25, size.height * 0.38), 5, Paint()..color = Colors.white);
+
+    final routerRect = Rect.fromCenter(center: Offset(size.width * 0.42, size.height * 0.75), width: size.width * 0.62, height: size.height * 0.22);
+    final routerPaint = Paint()..shader = const LinearGradient(colors: [Color(0xFF102A43), Color(0xFF1F5A9C)]).createShader(routerRect);
+    canvas.drawRRect(RRect.fromRectAndRadius(routerRect, const Radius.circular(12)), routerPaint);
+    final antenna = Paint()..color = const Color(0xFF102A43)..strokeWidth = 4..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(routerRect.left + 22, routerRect.top + 6), Offset(routerRect.left + 22, routerRect.top - 55), antenna);
+    canvas.drawLine(Offset(routerRect.right - 22, routerRect.top + 6), Offset(routerRect.right - 22, routerRect.top - 55), antenna);
+    for (var i = 0; i < 4; i++) {
+      canvas.drawCircle(Offset(routerRect.center.dx - 30 + i * 20, routerRect.center.dy), 4, Paint()..color = const Color(0xFF75D8FF));
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _LogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final line = Paint()..color = Colors.white.withOpacity(0.7)..style = PaintingStyle.stroke..strokeWidth = 1.3;
+    final dot = Paint()..color = Colors.white;
+    final points = [Offset(size.width * .15, size.height * .2), Offset(size.width * .84, size.height * .26), Offset(size.width * .78, size.height * .8), Offset(size.width * .18, size.height * .73)];
+    for (var i = 0; i < points.length; i++) {
+      canvas.drawLine(points[i], points[(i + 1) % points.length], line);
+      canvas.drawCircle(points[i], 3.2, dot);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _HeroClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
-    final path = Path()..lineTo(0, size.height * 0.86);
-    path.cubicTo(size.width * 0.22, size.height * 0.72, size.width * 0.48, size.height * 0.98, size.width * 0.72, size.height * 0.83);
-    path.cubicTo(size.width * 0.86, size.height * 0.74, size.width * 0.94, size.height * 0.78, size.width, size.height * 0.62);
+    final path = Path()..lineTo(0, size.height * .84);
+    path.cubicTo(size.width * .2, size.height * .67, size.width * .45, size.height * .98, size.width * .7, size.height * .82);
+    path.cubicTo(size.width * .86, size.height * .71, size.width * .94, size.height * .79, size.width, size.height * .6);
     path.lineTo(size.width, 0);
     path.close();
     return path;
