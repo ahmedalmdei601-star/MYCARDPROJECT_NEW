@@ -21,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final passwordController = TextEditingController();
   bool loading = false;
   bool passwordVisible = false;
+  bool rememberMe = false;
 
   Future<void> login() async {
     if (!_formKey.currentState!.validate()) return;
@@ -56,8 +57,8 @@ class _LoginScreenState extends State<LoginScreen> {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        icon: const Icon(Icons.lock_reset_rounded, color: primaryColor, size: 42),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        icon: const Icon(Icons.lock_reset_rounded, color: primaryColor, size: 40),
         title: const Text(
           'استعادة كلمة المرور',
           textAlign: TextAlign.center,
@@ -94,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
         bottom: false,
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final horizontalPadding = constraints.maxWidth >= 600 ? 72.0 : 20.0;
+            final horizontalPadding = constraints.maxWidth >= 600 ? 96.0 : 28.0;
             return SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Form(
@@ -103,12 +104,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const _HeroHeader(),
                     Padding(
-                      padding: EdgeInsets.fromLTRB(horizontalPadding, 20, horizontalPadding, 0),
-                      child: _FormContent(
+                      padding: EdgeInsets.fromLTRB(horizontalPadding, 18, horizontalPadding, 0),
+                      child: _LoginPanel(
                         identifierController: identifierController,
                         passwordController: passwordController,
                         passwordVisible: passwordVisible,
+                        rememberMe: rememberMe,
                         loading: loading,
+                        onRememberChanged: (value) => setState(() => rememberMe = value),
                         onPasswordVisibility: () => setState(() => passwordVisible = !passwordVisible),
                         onForgotPassword: showRecoveryNotice,
                         onLogin: login,
@@ -130,21 +133,25 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-class _FormContent extends StatelessWidget {
+class _LoginPanel extends StatelessWidget {
   final TextEditingController identifierController;
   final TextEditingController passwordController;
   final bool passwordVisible;
+  final bool rememberMe;
   final bool loading;
+  final ValueChanged<bool> onRememberChanged;
   final VoidCallback onPasswordVisibility;
   final VoidCallback onForgotPassword;
   final VoidCallback onLogin;
   final VoidCallback onCreateAccount;
 
-  const _FormContent({
+  const _LoginPanel({
     required this.identifierController,
     required this.passwordController,
     required this.passwordVisible,
+    required this.rememberMe,
     required this.loading,
+    required this.onRememberChanged,
     required this.onPasswordVisibility,
     required this.onForgotPassword,
     required this.onLogin,
@@ -156,122 +163,138 @@ class _FormContent extends StatelessWidget {
     return Column(
       children: [
         const Text(
-          'مرحباً بعودتك',
-          textAlign: TextAlign.center,
+          'تسجيل الدخول',
           style: TextStyle(
             fontFamily: 'Cairo',
-            fontSize: 32,
-            height: 1.2,
+            fontSize: 25,
             fontWeight: FontWeight.w800,
             color: primaryColor,
           ),
         ),
-        const SizedBox(height: 8),
-        const Text(
-          'سجل الدخول للوصول إلى حسابك',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'Cairo',
-            fontSize: 19,
-            height: 1.4,
-            color: Color(0xFF65708A),
+        const SizedBox(height: 7),
+        Container(
+          width: 190,
+          height: 3,
+          decoration: BoxDecoration(
+            color: primaryColor,
+            borderRadius: BorderRadius.circular(4),
           ),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 22),
         _LoginField(
           controller: identifierController,
-          hint: 'رقم الهاتف',
-          icon: Icons.phone_android_rounded,
+          hint: 'البريد الإلكتروني أو رقم الهاتف',
+          icon: Icons.mail_outline_rounded,
           keyboardType: TextInputType.phone,
           validator: (value) => value == null || value.trim().isEmpty ? 'يرجى إدخال رقم الهاتف' : null,
         ),
-        const SizedBox(height: 17),
+        const SizedBox(height: 13),
         _LoginField(
           controller: passwordController,
           hint: 'كلمة المرور',
-          icon: Icons.lock_rounded,
+          icon: Icons.lock_outline_rounded,
           obscureText: !passwordVisible,
           leading: IconButton(
             tooltip: passwordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور',
             onPressed: onPasswordVisibility,
             icon: Icon(
               passwordVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
-              color: const Color(0xFF667493),
-              size: 28,
+              color: const Color(0xFF6C7791),
+              size: 22,
             ),
           ),
           validator: (value) => value == null || value.isEmpty ? 'يرجى إدخال كلمة المرور' : null,
         ),
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: TextButton(
-            onPressed: onForgotPassword,
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        const SizedBox(height: 7),
+        Row(
+          textDirection: TextDirection.rtl,
+          children: [
+            Checkbox(
+              value: rememberMe,
+              onChanged: (value) => onRememberChanged(value ?? false),
+              activeColor: primaryColor,
+              side: const BorderSide(color: primaryColor, width: 1.5),
+              visualDensity: VisualDensity.compact,
             ),
-            child: const Text(
-              'هل نسيت كلمة المرور؟',
-              style: TextStyle(
-                fontFamily: 'Cairo',
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: primaryColor,
+            const Text(
+              'تذكرني',
+              style: TextStyle(fontFamily: 'Cairo', fontSize: 14, color: Color(0xFF27334F)),
+            ),
+            const Spacer(),
+            TextButton(
+              onPressed: onForgotPassword,
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 34),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                'نسيت كلمة المرور؟',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: primaryColor,
+                ),
               ),
             ),
-          ),
+          ],
         ),
-        const SizedBox(height: 15),
+        const SizedBox(height: 11),
         SizedBox(
           width: double.infinity,
-          height: 70,
+          height: 53,
           child: ElevatedButton.icon(
             onPressed: loading ? null : onLogin,
             icon: loading
                 ? const SizedBox(
-                    width: 25,
-                    height: 25,
-                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
-                : const Icon(Icons.login_rounded, size: 34),
+                : const Icon(Icons.arrow_forward_rounded, size: 25),
             label: const Text(
-              'تسجيل الدخول',
-              style: TextStyle(fontFamily: 'Cairo', fontSize: 24, fontWeight: FontWeight.bold),
+              'دخول',
+              style: TextStyle(fontFamily: 'Cairo', fontSize: 19, fontWeight: FontWeight.bold),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,
               foregroundColor: Colors.white,
-              elevation: 7,
-              shadowColor: primaryColor.withValues(alpha: .3),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(38)),
+              elevation: 3,
+              shadowColor: primaryColor.withValues(alpha: .24),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17)),
             ),
           ),
         ),
-        const SizedBox(height: 27),
+        const SizedBox(height: 20),
         Row(
           children: [
-            const Expanded(child: Divider(color: Color(0xFFC1CEE4), thickness: 1.4)),
+            const Expanded(child: Divider(color: Color(0xFFD9DFEC), thickness: 1)),
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 14),
-              child: Text(
-                'ليس لديك حساب؟',
-                style: TextStyle(fontFamily: 'Cairo', fontSize: 17, color: Color(0xFF65708A)),
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Text('أو', style: TextStyle(fontFamily: 'Cairo', fontSize: 15, color: Color(0xFF4B5873))),
             ),
-            const Expanded(child: Divider(color: Color(0xFFC1CEE4), thickness: 1.4)),
+            const Expanded(child: Divider(color: Color(0xFFD9DFEC), thickness: 1)),
           ],
         ),
-        const SizedBox(height: 8),
-        TextButton.icon(
+        const SizedBox(height: 12),
+        TextButton(
           onPressed: onCreateAccount,
           style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            foregroundColor: primaryColor,
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+            minimumSize: const Size(0, 34),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          icon: const Icon(Icons.person_add_alt_1_rounded, size: 31),
-          label: const Text(
+          child: const Text(
             'إنشاء حساب جديد',
-            style: TextStyle(fontFamily: 'Cairo', fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              decoration: TextDecoration.underline,
+              decorationThickness: 1.2,
+              color: primaryColor,
+            ),
           ),
         ),
       ],
@@ -300,40 +323,43 @@ class _LoginField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      textDirection: TextDirection.rtl,
-      textAlign: TextAlign.right,
-      style: const TextStyle(fontFamily: 'Cairo', fontSize: 20, color: Color(0xFF53617C)),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintTextDirection: TextDirection.rtl,
-        hintStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 20, color: Color(0xFF65708A)),
-        suffixIcon: Icon(icon, color: primaryColor, size: 31),
-        prefixIcon: leading,
-        filled: true,
-        fillColor: const Color(0xFFF4F6FD),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(31),
-          borderSide: const BorderSide(color: Color(0xFFC8D7EC), width: 1.8),
+    return SizedBox(
+      height: 58,
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        obscureText: obscureText,
+        textDirection: TextDirection.rtl,
+        textAlign: TextAlign.right,
+        style: const TextStyle(fontFamily: 'Cairo', fontSize: 16, color: Color(0xFF475570)),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintTextDirection: TextDirection.rtl,
+          hintStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 16, color: Color(0xFF7A849B)),
+          suffixIcon: Icon(icon, color: const Color(0xFF173C76), size: 23),
+          prefixIcon: leading,
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(17),
+            borderSide: const BorderSide(color: Color(0xFFE0E5EF), width: 1.2),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(17),
+            borderSide: const BorderSide(color: primaryColor, width: 1.7),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(17),
+            borderSide: const BorderSide(color: errorColor, width: 1.2),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(17),
+            borderSide: const BorderSide(color: errorColor, width: 1.7),
+          ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(31),
-          borderSide: const BorderSide(color: primaryColor, width: 2.2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(31),
-          borderSide: const BorderSide(color: errorColor, width: 1.5),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(31),
-          borderSide: const BorderSide(color: errorColor, width: 2),
-        ),
+        validator: validator,
       ),
-      validator: validator,
     );
   }
 }
@@ -344,19 +370,19 @@ class _HeroHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
-      aspectRatio: 1.42,
+      aspectRatio: 1.45,
       child: ClipPath(
-        clipper: _WaveClipper(),
+        clipper: _HeroWaveClipper(),
         child: CustomPaint(
           painter: _HeroPainter(),
           child: const Padding(
-            padding: EdgeInsets.fromLTRB(18, 12, 12, 24),
-            child: Row(
-              textDirection: TextDirection.ltr,
-              crossAxisAlignment: CrossAxisAlignment.center,
+            padding: EdgeInsets.fromLTRB(25, 15, 25, 35),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Expanded(flex: 11, child: _BrandLockup()),
-                Expanded(flex: 12, child: _NetworkIllustration()),
+                Expanded(flex: 7, child: _HeaderNetworkArt()),
+                SizedBox(height: 2),
+                _NetoraBrand(),
               ],
             ),
           ),
@@ -366,66 +392,43 @@ class _HeroHeader extends StatelessWidget {
   }
 }
 
-class _BrandLockup extends StatelessWidget {
-  const _BrandLockup();
+class _NetoraBrand extends StatelessWidget {
+  const _NetoraBrand();
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _LogoMark(size: 86),
-        const SizedBox(height: 14),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: const Text(
-            'NETORA',
-            style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900, letterSpacing: 1.1),
+        const Text(
+          'NETORA',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 34,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.1,
           ),
         ),
-        const SizedBox(height: 2),
-        const FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            'Network Management App',
-            style: TextStyle(color: Colors.white70, fontSize: 12.5, letterSpacing: .2),
-          ),
+        const SizedBox(height: 1),
+        const Text(
+          'Network Manager',
+          style: TextStyle(color: Colors.white, fontSize: 14, letterSpacing: .3),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'إدارة ذكية .. لشبكتك بكل سهولة',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontFamily: 'Cairo', color: Colors.white, fontSize: 14),
         ),
       ],
     );
   }
 }
 
-class _LogoMark extends StatelessWidget {
-  final double size;
-  const _LogoMark({required this.size});
+class _HeaderNetworkArt extends StatelessWidget {
+  const _HeaderNetworkArt();
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size * .82,
-      child: CustomPaint(
-        painter: _LogoPainter(),
-        child: Center(
-          child: Text(
-            'N',
-            style: TextStyle(color: Colors.white, fontSize: size * .52, fontWeight: FontWeight.w900),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NetworkIllustration extends StatelessWidget {
-  const _NetworkIllustration();
-
-  @override
-  Widget build(BuildContext context) => const CustomPaint(painter: _NetworkPainter(), child: SizedBox.expand());
+  Widget build(BuildContext context) => const CustomPaint(painter: _HeaderNetworkPainter(), child: SizedBox.expand());
 }
 
 class _HeroPainter extends CustomPainter {
@@ -436,20 +439,20 @@ class _HeroPainter extends CustomPainter {
       rect,
       Paint()
         ..shader = const LinearGradient(
-          colors: [Color(0xFF168CF5), Color(0xFF0870D6), Color(0xFF063D8E)],
-          begin: Alignment.topLeft,
+          colors: [Color(0xFF07326A), Color(0xFF0758AA), Color(0xFF0D76D2)],
+          begin: Alignment.topCenter,
           end: Alignment.bottomRight,
         ).createShader(rect),
     );
     canvas.drawCircle(
-      Offset(size.width * .17, size.height * .18),
-      size.height * .76,
-      Paint()..color = const Color(0xFF65D4FF).withValues(alpha: .18),
+      Offset(size.width * .02, size.height * .2),
+      size.height * .78,
+      Paint()..color = const Color(0xFF4CC5FF).withValues(alpha: .11),
     );
     canvas.drawCircle(
-      Offset(size.width * .98, size.height * .25),
-      size.height * .8,
-      Paint()..color = const Color(0xFF001E62).withValues(alpha: .2),
+      Offset(size.width * 1.05, size.height * .35),
+      size.height * .72,
+      Paint()..color = const Color(0xFF001B53).withValues(alpha: .18),
     );
   }
 
@@ -457,79 +460,60 @@ class _HeroPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _NetworkPainter extends CustomPainter {
-  const _NetworkPainter();
+class _HeaderNetworkPainter extends CustomPainter {
+  const _HeaderNetworkPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width * .55, size.height * .43);
-    final radius = math.min(size.width, size.height) * .31;
-    final grid = Paint()
-      ..color = Colors.white.withValues(alpha: .3)
+    final center = Offset(size.width * .5, size.height * .56);
+    final r = math.min(size.width, size.height) * .22;
+    final line = Paint()
+      ..color = Colors.white.withValues(alpha: .25)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
+    canvas.drawCircle(center, r, line);
+    canvas.drawOval(Rect.fromCenter(center: center, width: r * .82, height: r * 2), line);
+    canvas.drawOval(Rect.fromCenter(center: center, width: r * 2, height: r * .72), line);
 
-    canvas.drawCircle(center, radius, grid);
-    canvas.drawOval(Rect.fromCenter(center: center, width: radius * .95, height: radius * 2), grid);
-    canvas.drawOval(Rect.fromCenter(center: center, width: radius * 2, height: radius * .72), grid);
-
-    final nodes = Paint()..color = const Color(0xFF77D9FF);
-    final points = <Offset>[];
-    for (var i = 0; i < 12; i++) {
-      final angle = i * math.pi * .34;
-      final point = Offset(center.dx + math.cos(angle) * radius * .92, center.dy + math.sin(angle) * radius * .92);
-      points.add(point);
-      canvas.drawCircle(point, 3.1, nodes);
-      if (i > 0) {
-        canvas.drawLine(
-          point,
-          points[i - 1],
-          Paint()
-            ..color = nodes.color.withValues(alpha: .45)
-            ..strokeWidth = .9,
-        );
-      }
+    final nodes = Paint()..color = const Color(0xFF72D8FF);
+    for (var i = 0; i < 9; i++) {
+      final angle = i * math.pi * .43;
+      final point = Offset(center.dx + math.cos(angle) * r * .92, center.dy + math.sin(angle) * r * .92);
+      canvas.drawCircle(point, 3, nodes);
     }
 
     final wifi = Paint()
-      ..color = Colors.white.withValues(alpha: .95)
+      ..color = const Color(0xFF55C8FF)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 5
+      ..strokeWidth = 7
       ..strokeCap = StrokeCap.round;
     for (var i = 0; i < 3; i++) {
-      final arc = Rect.fromCenter(
-        center: Offset(size.width * .54, size.height * .18),
-        width: 56 + i * 25,
-        height: 56 + i * 25,
+      final rect = Rect.fromCenter(
+        center: Offset(size.width * .5, size.height * .25),
+        width: 48 + i * 28,
+        height: 48 + i * 28,
       );
-      canvas.drawArc(arc, math.pi * 1.18, math.pi * .64, false, wifi);
+      canvas.drawArc(rect, math.pi * 1.18, math.pi * .64, false, wifi);
     }
-    canvas.drawCircle(Offset(size.width * .54, size.height * .28), 5.5, Paint()..color = Colors.white);
+    canvas.drawCircle(Offset(size.width * .5, size.height * .37), 9, Paint()..color = const Color(0xFF2DA7F7));
 
     final router = Rect.fromCenter(
-      center: Offset(size.width * .56, size.height * .78),
-      width: size.width * .72,
-      height: size.height * .2,
+      center: Offset(size.width * .5, size.height * .84),
+      width: size.width * .5,
+      height: size.height * .18,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(router, const Radius.circular(18)),
-      Paint()
-        ..shader = const LinearGradient(
-          colors: [Color(0xFF102D4B), Color(0xFF174F7D)],
-        ).createShader(router),
+      RRect.fromRectAndRadius(router, const Radius.circular(14)),
+      Paint()..color = const Color(0xFFF4F7FC),
     );
-    final antenna = Paint()
-      ..color = const Color(0xFF092846)
-      ..strokeWidth = 4
+    final routerLine = Paint()
+      ..color = const Color(0xFF163C73)
+      ..strokeWidth = 3
       ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(router.left + 25, router.top + 8), Offset(router.left + 25, router.top - 75), antenna);
-    canvas.drawLine(Offset(router.right - 25, router.top + 8), Offset(router.right - 25, router.top - 75), antenna);
+    canvas.drawLine(Offset(router.left + 15, router.top + 4), Offset(router.left + 15, router.top - 42), routerLine);
+    canvas.drawLine(Offset(router.right - 15, router.top + 4), Offset(router.right - 15, router.top - 42), routerLine);
     for (var i = 0; i < 4; i++) {
-      canvas.drawCircle(
-        Offset(router.center.dx - 35 + i * 24, router.center.dy),
-        4.5,
-        Paint()..color = const Color(0xFF78D8FF),
-      );
+      canvas.drawCircle(Offset(router.center.dx - 25 + i * 17, router.center.dy), 3.5, Paint()..color = const Color(0xFF2D9CEB));
     }
   }
 
@@ -537,36 +521,12 @@ class _NetworkPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _LogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final line = Paint()
-      ..color = Colors.white.withValues(alpha: .82)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    final dot = Paint()..color = Colors.white;
-    final points = [
-      Offset(size.width * .12, size.height * .2),
-      Offset(size.width * .86, size.height * .26),
-      Offset(size.width * .78, size.height * .82),
-      Offset(size.width * .18, size.height * .74),
-    ];
-    for (var i = 0; i < points.length; i++) {
-      canvas.drawLine(points[i], points[(i + 1) % points.length], line);
-      canvas.drawCircle(points[i], 3.7, dot);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _WaveClipper extends CustomClipper<Path> {
+class _HeroWaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
-    final path = Path()..lineTo(0, size.height * .87);
-    path.cubicTo(size.width * .2, size.height * .73, size.width * .43, size.height * .98, size.width * .67, size.height * .85);
-    path.cubicTo(size.width * .84, size.height * .76, size.width * .94, size.height * .82, size.width, size.height * .63);
+    final path = Path()..lineTo(0, size.height * .83);
+    path.cubicTo(size.width * .2, size.height * .98, size.width * .45, size.height * .65, size.width * .7, size.height * .84);
+    path.cubicTo(size.width * .86, size.height * .95, size.width * .95, size.height * .81, size.width, size.height * .68);
     path.lineTo(size.width, 0);
     path.close();
     return path;
@@ -582,21 +542,21 @@ class _SecurityFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 124,
+      height: 108,
       child: CustomPaint(
         painter: _FooterPainter(),
         child: const Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-            padding: EdgeInsets.only(bottom: 32),
+            padding: EdgeInsets.only(bottom: 27),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.verified_user_rounded, color: Colors.white, size: 25),
-                SizedBox(width: 8),
+                Icon(Icons.verified_user_rounded, color: Colors.white, size: 22),
+                SizedBox(width: 7),
                 Text(
                   'إدارة شبكتك بكل سهولة وأمان',
-                  style: TextStyle(fontFamily: 'Cairo', fontSize: 15, color: Colors.white),
+                  style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: Colors.white),
                 ),
               ],
             ),
@@ -610,22 +570,20 @@ class _SecurityFooter extends StatelessWidget {
 class _FooterPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final blue = Paint()..color = primaryColor;
-    final light = Paint()..color = const Color(0xFFCFE0FA);
     final path = Path()
-      ..moveTo(0, size.height * .54)
-      ..cubicTo(size.width * .25, size.height * .74, size.width * .5, size.height * .42, size.width, size.height * .64)
+      ..moveTo(0, size.height * .48)
+      ..cubicTo(size.width * .24, size.height * .72, size.width * .51, size.height * .35, size.width, size.height * .6)
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
-    canvas.drawPath(path, blue);
+    canvas.drawPath(path, Paint()..color = primaryColor);
     final edge = Path()
-      ..moveTo(0, size.height * .47)
-      ..cubicTo(size.width * .25, size.height * .66, size.width * .5, size.height * .34, size.width, size.height * .57)
-      ..lineTo(size.width, size.height * .66)
-      ..cubicTo(size.width * .5, size.height * .43, size.width * .25, size.height * .75, 0, size.height * .58)
+      ..moveTo(0, size.height * .4)
+      ..cubicTo(size.width * .24, size.height * .64, size.width * .51, size.height * .27, size.width, size.height * .53)
+      ..lineTo(size.width, size.height * .64)
+      ..cubicTo(size.width * .51, size.height * .39, size.width * .24, size.height * .73, 0, size.height * .53)
       ..close();
-    canvas.drawPath(edge, light);
+    canvas.drawPath(edge, Paint()..color = const Color(0xFFDCE9FA));
   }
 
   @override
