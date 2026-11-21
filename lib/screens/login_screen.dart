@@ -244,19 +244,26 @@ class _LoginPanel extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           height: 53,
-          child: ElevatedButton.icon(
+          child: ElevatedButton(
             onPressed: loading ? null : onLogin,
-            icon: loading
+            child: loading
                 ? const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
-                : const Icon(Icons.arrow_forward_rounded, size: 25),
-            label: const Text(
-              'دخول',
-              style: TextStyle(fontFamily: 'Cairo', fontSize: 19, fontWeight: FontWeight.bold),
-            ),
+                : const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    textDirection: TextDirection.rtl,
+                    children: [
+                      Text(
+                        'دخول',
+                        style: TextStyle(fontFamily: 'Cairo', fontSize: 19, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(width: 10),
+                      Icon(Icons.arrow_forward_rounded, size: 25),
+                    ],
+                  ),
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,
               foregroundColor: Colors.white,
@@ -272,7 +279,7 @@ class _LoginPanel extends StatelessWidget {
             const Expanded(child: Divider(color: Color(0xFFD9DFEC), thickness: 1)),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 12),
-              child: Text('أو', style: TextStyle(fontFamily: 'Cairo', fontSize: 15, color: Color(0xFF4B5873))),
+              child: Text('ليس لديك حساب؟', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, color: Color(0xFF4B5873))),
             ),
             const Expanded(child: Divider(color: Color(0xFFD9DFEC), thickness: 1)),
           ],
@@ -412,12 +419,6 @@ class _NetoraBrand extends StatelessWidget {
         const Text(
           'Network Manager',
           style: TextStyle(color: Colors.white, fontSize: 14, letterSpacing: .3),
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          'إدارة ذكية .. لشبكتك بكل سهولة',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontFamily: 'Cairo', color: Colors.white, fontSize: 14),
         ),
       ],
     );
