@@ -90,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: backgroundColor,
       body: SafeArea(
         bottom: false,
         child: LayoutBuilder(
@@ -104,20 +104,40 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const _HeroHeader(),
                     Padding(
-                      padding: EdgeInsets.fromLTRB(horizontalPadding, 18, horizontalPadding, 0),
-                      child: _LoginPanel(
-                        identifierController: identifierController,
-                        passwordController: passwordController,
-                        passwordVisible: passwordVisible,
-                        rememberMe: rememberMe,
-                        loading: loading,
-                        onRememberChanged: (value) => setState(() => rememberMe = value),
-                        onPasswordVisibility: () => setState(() => passwordVisible = !passwordVisible),
-                        onForgotPassword: showRecoveryNotice,
-                        onLogin: login,
-                        onCreateAccount: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const AccountTypeSelectionScreen()),
+                      padding: EdgeInsets.fromLTRB(horizontalPadding, 16, horizontalPadding, 0),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 520),
+                          child: Container(
+                            padding: const EdgeInsets.fromLTRB(20, 20, 20, 14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: const Color(0xFFE4EAF3)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF173C76).withValues(alpha: .08),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: _LoginPanel(
+                              identifierController: identifierController,
+                              passwordController: passwordController,
+                              passwordVisible: passwordVisible,
+                              rememberMe: rememberMe,
+                              loading: loading,
+                              onRememberChanged: (value) => setState(() => rememberMe = value),
+                              onPasswordVisibility: () => setState(() => passwordVisible = !passwordVisible),
+                              onForgotPassword: showRecoveryNotice,
+                              onLogin: login,
+                              onCreateAccount: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const AccountTypeSelectionScreen()),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
