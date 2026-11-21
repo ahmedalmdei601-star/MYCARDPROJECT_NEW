@@ -108,40 +108,34 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Center(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 520),
-                          child: Container(
-                            padding: const EdgeInsets.fromLTRB(20, 20, 20, 14),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: const Color(0xFFE4EAF3)),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF173C76).withValues(alpha: .08),
-                                  blurRadius: 24,
-                                  offset: const Offset(0, 8),
+                          child: PhysicalShape(
+                            clipper: _LoginCardClipper(),
+                            color: Colors.white,
+                            elevation: 7,
+                            shadowColor: const Color(0xFF173C76).withValues(alpha: .12),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 34, 20, 14),
+                              child: _LoginPanel(
+                                identifierController: identifierController,
+                                passwordController: passwordController,
+                                passwordVisible: passwordVisible,
+                                rememberMe: rememberMe,
+                                loading: loading,
+                                onRememberChanged: (value) => setState(() => rememberMe = value),
+                                onPasswordVisibility: () => setState(() => passwordVisible = !passwordVisible),
+                                onForgotPassword: showRecoveryNotice,
+                                onLogin: login,
+                                onCreateAccount: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const AccountTypeSelectionScreen()),
                                 ),
-                              ],
-                            ),
-                            child: _LoginPanel(
-                              identifierController: identifierController,
-                              passwordController: passwordController,
-                              passwordVisible: passwordVisible,
-                              rememberMe: rememberMe,
-                              loading: loading,
-                              onRememberChanged: (value) => setState(() => rememberMe = value),
-                              onPasswordVisibility: () => setState(() => passwordVisible = !passwordVisible),
-                              onForgotPassword: showRecoveryNotice,
-                              onLogin: login,
-                              onCreateAccount: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const AccountTypeSelectionScreen()),
                               ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                    const _SecurityFooter(),
+                    const SizedBox(height: 28),
                   ],
                 ),
               ),
@@ -272,16 +266,18 @@ class _LoginPanel extends StatelessWidget {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
-                : const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    textDirection: TextDirection.rtl,
+                : Stack(
+                    alignment: Alignment.center,
                     children: [
-                      Text(
+                      const Text(
                         'دخول',
+                        textAlign: TextAlign.center,
                         style: TextStyle(fontFamily: 'Cairo', fontSize: 19, fontWeight: FontWeight.bold),
                       ),
-                      SizedBox(width: 10),
-                      Icon(Icons.arrow_forward_rounded, size: 25),
+                      const PositionedDirectional(
+                        start: 16,
+                        child: Icon(Icons.arrow_forward_rounded, size: 25),
+                      ),
                     ],
                   ),
             style: ElevatedButton.styleFrom(
@@ -549,6 +545,24 @@ class _HeroWaveClipper extends CustomClipper<Path> {
     path.cubicTo(size.width * .2, size.height * .98, size.width * .45, size.height * .65, size.width * .7, size.height * .84);
     path.cubicTo(size.width * .86, size.height * .95, size.width * .95, size.height * .81, size.width, size.height * .68);
     path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+}
+
+class _LoginCardClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path()..moveTo(0, 34);
+    path.cubicTo(size.width * .18, 8, size.width * .39, 0, size.width * .56, 10);
+    path.cubicTo(size.width * .74, 21, size.width * .88, 31, size.width, 10);
+    path.lineTo(size.width, size.height - 24);
+    path.quadraticBezierTo(size.width, size.height, size.width - 24, size.height);
+    path.lineTo(24, size.height);
+    path.quadraticBezierTo(0, size.height, 0, size.height - 24);
     path.close();
     return path;
   }
