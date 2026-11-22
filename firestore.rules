@@ -12,17 +12,49 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    function isNetworkOwner(data) {
+      return data.role == 'Network Owner';
+    }
+
+    function validUserShape() {
+      return request.resource.data.keys().hasOnly([
+          'name', 'phone', 'role', 'createdAt', 'lastLogin',
+          'email', 'networkName', 'networkId'
+        ])
+        && request.resource.data.keys().hasAll(['name', 'phone', 'role', 'createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.phone is string
+        && request.resource.data.createdAt is timestamp
+        && (!('lastLogin' in request.resource.data.keys())
+          || request.resource.data.lastLogin == null
+          || request.resource.data.lastLogin is timestamp)
+        && (!('email' in request.resource.data.keys())
+          || request.resource.data.email is string)
+        && (!('networkName' in request.resource.data.keys())
+          || request.resource.data.networkName is string)
+        && (!('networkId' in request.resource.data.keys())
+          || request.resource.data.networkId is string);
+    }
+
     match /users/{userId} {
+      // A client may create only their own profile and cannot self-assign admin.
       allow create: if signedIn()
         && request.auth.uid == userId
-        && request.resource.data.role in ['client', 'Network Owner', 'network_owner'];
+        && validUserShape()
+        && request.resource.data.role in ['client', 'Network Owner']
+        && (isNetworkOwner(request.resource.data)
+          ? request.resource.data.keys().hasAll(['email', 'networkName', 'networkId'])
+            && request.resource.data.networkId == userId
+          : true);
 
       allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
 
+      // A user may only update lastLogin; administrators retain full access.
       allow update: if isAdmin()
         || (signedIn()
           && request.auth.uid == userId
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin']));
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin'])
+          && request.resource.data.role == resource.data.role);
 
       allow delete: if isAdmin();
     }
@@ -30,11 +62,40 @@ service cloud.firestore {
     match /networks/{networkId} {
       allow create: if signedIn()
         && networkId == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'name', 'ownerId', 'ownerName', 'ownerPhone', 'ownerEmail', 'role', 'createdAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'name', 'ownerId', 'ownerName', 'ownerPhone', 'ownerEmail', 'role', 'createdAt'
+        ])
+        && request.resource.data.name is string
         && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerName is string
+        && request.resource.data.ownerPhone is string
+        && request.resource.data.ownerEmail is string
+        && request.resource.data.role == 'Network Owner'
+        && request.resource.data.createdAt is timestamp
         && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Network Owner';
 
-      allow read, update, delete: if signedIn()
+      allow read: if signedIn()
         && (resource.data.ownerId == request.auth.uid || isAdmin());
+
+      // Owners cannot change ownership or role and may edit only network details.
+      allow update: if isAdmin()
+        || (signedIn()
+          && resource.data.ownerId == request.auth.uid
+          && request.resource.data.ownerId == resource.data.ownerId
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.name is string
+          && request.resource.data.ownerName is string
+          && request.resource.data.ownerPhone is string
+          && request.resource.data.ownerEmail is string
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'name', 'ownerName', 'ownerPhone', 'ownerEmail'
+          ]));
+
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.ownerId == request.auth.uid);
     }
   }
 }

@@ -19,7 +19,7 @@ class UserState extends ChangeNotifier {
   
   bool get isAdmin => _user?.role == 'admin';
   bool get isClient => _user?.role == 'client';
-  bool get isNetworkOwner => _user?.role == 'Network Owner' || _user?.role == 'network_owner';
+  bool get isNetworkOwner => _user?.role == 'Network Owner';
   bool get isAuthenticated => _user != null;
 
   UserState() {
@@ -89,7 +89,7 @@ class UserState extends ChangeNotifier {
       final userData = await _userService.getUser(uid);
       
       if (userData != null &&
-          (userData.role == 'admin' || userData.role == 'client' || userData.role == 'Network Owner' || userData.role == 'network_owner')) {
+          (userData.role == 'admin' || userData.role == 'client' || userData.role == 'Network Owner')) {
         _user = userData;
         // Save to local storage for next time
         final prefs = await SharedPreferences.getInstance();
