@@ -12,6 +12,7 @@ import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/admin/admin_dashboard.dart';
 import 'screens/client/client_dashboard.dart';
+import 'screens/network_owner_dashboard.dart';
 import 'theme.dart';
 
 void main() async {
@@ -118,6 +119,8 @@ class RootScreen extends StatelessWidget {
         // التوجيه بناءً على الدور (Role)
         if (userState.isAdmin) {
           return const AdminDashboard();
+        } else if (userState.isNetworkOwner) {
+          return const NetworkOwnerDashboard();
         } else if (userState.isClient) {
           return const ClientDashboard();
         }

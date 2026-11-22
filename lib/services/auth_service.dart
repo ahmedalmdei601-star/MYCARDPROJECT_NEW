@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'user_services.dart';
 import '../models/user_model.dart';
 
@@ -80,14 +81,30 @@ class AuthService {
       }
 
       final secondaryAuth = FirebaseAuth.instanceFor(app: secondaryApp);
-      final credential = await secondaryAuth.createUserWithEmailAndPassword(
-        email: email.trim(),
-        password: password,
-      );
+      final firestore = FirebaseFirestore.instanceFor(app: secondaryApp);
+      final userService = UserService(firestore: firestore);
+
+      late UserCredential credential;
+      try {
+        credential = await secondaryAuth.createUserWithEmailAndPassword(
+          email: email.trim(),
+          password: password,
+        );
+      } on FirebaseAuthException catch (e) {
+        if (e.code != 'email-already-in-use') rethrow;
+
+        // The Auth account may exist while its Firestore profile was never
+        // written. Sign in with the supplied password and complete the same
+        // UID instead of creating a duplicate account.
+        credential = await secondaryAuth.signInWithEmailAndPassword(
+          email: email.trim(),
+          password: password,
+        );
+      }
       final user = credential.user;
       if (user == null) return null;
 
-      await _userService.createNetworkOwner(
+      await userService.createNetworkOwner(
         user: UserModel(
           id: user.uid,
           name: ownerName.trim(),
@@ -106,16 +123,21 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       String errorMessage = 'خطأ في إنشاء حساب مالك الشبكة.';
       if (e.code == 'email-already-in-use') {
-        errorMessage = 'البريد الإلكتروني مستخدم بالفعل.';
+        errorMessage = 'تعذر استكمال حساب البريد الإلكتروني الموجود.';
       } else if (e.code == 'invalid-email') {
         errorMessage = 'صيغة البريد الإلكتروني غير صحيحة.';
       } else if (e.code == 'weak-password') {
         errorMessage = 'كلمة المرور ضعيفة جداً.';
+      } else if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        errorMessage = 'البريد الإلكتروني موجود، لكن كلمة المرور غير صحيحة. استخدم كلمة المرور الأصلية لاستكمال الحساب.';
       } else if (e.code == 'network-request-failed') {
         errorMessage = 'فشل الاتصال بالإنترنت.';
       }
       throw Exception(errorMessage);
     } catch (e) {
+      if (e is FirebaseException && e.code == 'permission-denied') {
+        throw Exception('قواعد Firestore لا تسمح بحفظ بيانات الشبكة لهذا المستخدم. يجب نشر القواعد الآمنة المرفقة.');
+      }
       throw Exception('حدث خطأ غير متوقع أثناء إنشاء الشبكة: $e');
     } finally {
       await secondaryApp?.delete();
@@ -134,7 +156,13 @@ class AuthService {
         password: password,
       );
       if (cred.user != null) {
-        // Update lastLogin in Firestore
+        final profile = await _userService.getUser(cred.user!.uid);
+        if (profile == null) {
+          await _auth.signOut();
+          throw Exception(
+            'تم التحقق من الحساب، لكن ملف المستخدم غير موجود في Firestore. أعد إكمال تسجيل الشبكة قبل تسجيل الدخول.',
+          );
+        }
         await _userService.updateLastLogin(cred.user!.uid);
       }
       return cred.user;
@@ -149,6 +177,11 @@ class AuthService {
       }
       throw Exception(errorMessage);
     } catch (e) {
+      if (e is FirebaseException && (e.code == 'permission-denied' || e.code == 'not-found')) {
+        await _auth.signOut();
+        throw Exception('تعذر قراءة ملف المستخدم من Firestore. تحقق من وجود المستند وقواعد الوصول ثم أعد المحاولة.');
+      }
+      if (e is Exception) rethrow;
       throw Exception('حدث خطأ غير متوقع: $e');
     }
   }

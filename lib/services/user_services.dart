@@ -2,7 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 
 class UserService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
+
+  UserService({FirebaseFirestore? firestore}) : _firestore = firestore ?? FirebaseFirestore.instance;
 
   Future<void> createUser(UserModel user) async {
     await _firestore.collection('users').doc(user.id).set(user.toMap());
@@ -15,7 +17,9 @@ class UserService {
   }) async {
     final batch = _firestore.batch();
     final userRef = _firestore.collection('users').doc(user.id);
-    final networkRef = _firestore.collection('networks').doc();
+    // Use the owner UID as the network document ID so retries are idempotent
+    // and never create a second network for the same owner.
+    final networkRef = _firestore.collection('networks').doc(user.id);
 
     batch.set(userRef, {
       ...user.toMap(),
