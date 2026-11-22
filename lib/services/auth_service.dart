@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'user_services.dart';
 import '../models/user_model.dart';
 
@@ -56,6 +57,69 @@ class AuthService {
       throw Exception('حدث خطأ غير متوقع: $e');
     }
     return null;
+  }
+
+  // Public registration for a new network owner. A secondary Firebase app
+  // keeps the current session untouched while creating the new account.
+  static Future<User?> createNetworkOwnerAccount({
+    required String networkName,
+    required String ownerName,
+    required String phone,
+    required String email,
+    required String password,
+  }) async {
+    FirebaseApp? secondaryApp;
+    try {
+      try {
+        secondaryApp = Firebase.app('NetworkOwnerRegistration');
+      } catch (_) {
+        secondaryApp = await Firebase.initializeApp(
+          name: 'NetworkOwnerRegistration',
+          options: Firebase.app().options,
+        );
+      }
+
+      final secondaryAuth = FirebaseAuth.instanceFor(app: secondaryApp);
+      final credential = await secondaryAuth.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+      final user = credential.user;
+      if (user == null) return null;
+
+      await _userService.createNetworkOwner(
+        user: UserModel(
+          id: user.uid,
+          name: ownerName.trim(),
+          phone: phone.trim(),
+          role: 'Network Owner',
+          createdAt: DateTime.now(),
+          email: email.trim(),
+          networkName: networkName.trim(),
+        ),
+        networkName: networkName.trim(),
+        ownerEmail: email.trim(),
+      );
+
+      await secondaryAuth.signOut();
+      return user;
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'خطأ في إنشاء حساب مالك الشبكة.';
+      if (e.code == 'email-already-in-use') {
+        errorMessage = 'البريد الإلكتروني مستخدم بالفعل.';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'صيغة البريد الإلكتروني غير صحيحة.';
+      } else if (e.code == 'weak-password') {
+        errorMessage = 'كلمة المرور ضعيفة جداً.';
+      } else if (e.code == 'network-request-failed') {
+        errorMessage = 'فشل الاتصال بالإنترنت.';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('حدث خطأ غير متوقع أثناء إنشاء الشبكة: $e');
+    } finally {
+      await secondaryApp?.delete();
+    }
   }
 
   // Login for all users (supports phone or email)

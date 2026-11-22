@@ -8,6 +8,31 @@ class UserService {
     await _firestore.collection('users').doc(user.id).set(user.toMap());
   }
 
+  Future<void> createNetworkOwner({
+    required UserModel user,
+    required String networkName,
+    required String ownerEmail,
+  }) async {
+    final batch = _firestore.batch();
+    final userRef = _firestore.collection('users').doc(user.id);
+    final networkRef = _firestore.collection('networks').doc();
+
+    batch.set(userRef, {
+      ...user.toMap(),
+      'networkId': networkRef.id,
+    });
+    batch.set(networkRef, {
+      'name': networkName,
+      'ownerId': user.id,
+      'ownerName': user.name,
+      'ownerPhone': user.phone,
+      'ownerEmail': ownerEmail,
+      'role': 'Network Owner',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    await batch.commit();
+  }
+
   Future<void> updateLastLogin(String userId) async {
     await _firestore.collection('users').doc(userId).update({
       'lastLogin': FieldValue.serverTimestamp(),

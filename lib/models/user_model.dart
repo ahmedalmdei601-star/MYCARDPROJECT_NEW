@@ -7,6 +7,8 @@ class UserModel {
   final String role;
   final DateTime createdAt;
   final DateTime? lastLogin;
+  final String? email;
+  final String? networkName;
 
   UserModel({
     required this.id,
@@ -15,6 +17,8 @@ class UserModel {
     required this.role,
     required this.createdAt,
     this.lastLogin,
+    this.email,
+    this.networkName,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map, String id) {
@@ -25,6 +29,8 @@ class UserModel {
       role: map['role'] ?? 'client',
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       lastLogin: (map['lastLogin'] as Timestamp?)?.toDate(),
+      email: map['email'],
+      networkName: map['networkName'],
     );
   }
 
@@ -35,6 +41,8 @@ class UserModel {
       'role': role,
       'createdAt': Timestamp.fromDate(createdAt),
       'lastLogin': lastLogin != null ? Timestamp.fromDate(lastLogin!) : null,
+      if (email != null) 'email': email,
+      if (networkName != null) 'networkName': networkName,
     };
   }
 
@@ -47,6 +55,8 @@ class UserModel {
       'role': role,
       'createdAt': createdAt.toIso8601String(),
       'lastLogin': lastLogin?.toIso8601String(),
+      'email': email,
+      'networkName': networkName,
     };
   }
 
@@ -58,6 +68,8 @@ class UserModel {
       role: json['role'],
       createdAt: DateTime.parse(json['createdAt']),
       lastLogin: json['lastLogin'] != null ? DateTime.parse(json['lastLogin']) : null,
+      email: json['email'],
+      networkName: json['networkName'],
     );
   }
 }

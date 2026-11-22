@@ -2,36 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 import 'register_screen.dart';
+import 'network_owner_registration_screen.dart';
 
 class AccountTypeSelectionScreen extends StatelessWidget {
   const AccountTypeSelectionScreen({super.key});
-
-  void _showNetworkRegistrationNotice(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        icon: const Icon(Icons.info_outline_rounded, color: primaryColor, size: 42),
-        title: const Text(
-          'إنشاء شبكة جديدة',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
-          'نموذج إنشاء الشبكة غير متاح في النسخة الحالية. يمكنك استخدام حساب المسؤول الحالي أو العودة لاحقاً بعد إضافة هذا المسار.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontFamily: 'Cairo', height: 1.6),
-        ),
-        actionsAlignment: MainAxisAlignment.center,
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('حسناً', style: TextStyle(fontFamily: 'Cairo')),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +63,10 @@ class AccountTypeSelectionScreen extends StatelessWidget {
                       title: 'إنشاء شبكة جديدة',
                       description: 'أنا صاحب شبكة',
                       accentColor: vibrantBlueColor,
-                      onTap: () => _showNetworkRegistrationNotice(context),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const NetworkOwnerRegistrationScreen()),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     _AccountTypeCard(
